@@ -1,0 +1,17 @@
+.venv
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/
+logs/
+.env
+.env.*
+*.log
+
+# Static build artifacts
+dist/
+build/
+
+# IDE/editor
+.vscode/
+.idea/

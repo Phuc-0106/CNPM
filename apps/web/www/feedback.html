@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Session Feedback</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body class="student-wrap">
+  <header class="nav">
+    <div class="container nav-inner">
+      <a class="nav-brand" href="/student.html">
+        <img src="/static/images/hcmut.svg" alt="BKTutor">
+        <span>BKTutor</span>
+      </a>
+      <nav class="nav-links">
+        <a href="/student.html">Home</a>
+        <a href="/profile.html">Profile</a>
+      </nav>
+      <div class="spacer"></div>
+      <button id="logoutBtn" class="btn primary" type="button">Log out</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="container">
+      <div class="panel">
+        <h2>Session Feedback</h2>
+        <form id="feedback-form" class="profile-form">
+          <div class="field">
+            <label for="fb-session">Session code</label>
+            <input id="fb-session" class="input" placeholder="e.g. CS101" required>
+          </div>
+          <div class="field">
+            <label for="fb-rating">Rating</label>
+            <select id="fb-rating" class="input">
+              <option>5 - Excellent</option>
+              <option>4 - Good</option>
+              <option>3 - Fair</option>
+              <option>2 - Poor</option>
+              <option>1 - Very poor</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="fb-notes">Comments</label>
+            <textarea id="fb-notes" class="input" rows="4" placeholder="What went well? What to improve?"></textarea>
+          </div>
+          <button class="btn primary" type="submit">Submit feedback</button>
+          <div id="fb-msg" class="muted tiny-top"></div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container" style="display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;">
+      <div>(c) 2025 HCMUT - Privacy - Terms</div>
+      <div>Support: <a href="mailto:support@hcmut.edu.vn">support@hcmut.edu.vn</a></div>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      const API_BASE = (() => {
+        const { protocol, hostname, port } = window.location;
+        if (port === "5173") return `${protocol}//${hostname}:4000`;
+        return "/api";
+      })();
+      const form = document.querySelector("#feedback-form");
+      const msg = document.querySelector("#fb-msg");
+      document.querySelector("#logoutBtn")?.addEventListener("click", async () => {
+        try { await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" }); } catch {}
+        window.location.href = "/login.html";
+      });
+      form?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        msg.textContent = "Submitted (demo).";
+        msg.style.color = "#9ca3af";
+      });
+    })();
+  </script>
+</body>
+</html>

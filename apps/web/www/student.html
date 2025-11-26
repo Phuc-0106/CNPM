@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BKTutor | Student</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav-inner">
+      <a class="nav-brand" href="/student.html" aria-label="Student Home">
+        <img src="/static/images/hcmut.svg" alt="BKTutor">
+        <span>BKTutor</span>
+      </a>
+      <nav class="nav-links">
+        <a href="/student.html" class="active">Home</a>
+        <a href="/profile.html">Profile</a>
+      </nav>
+      <div class="spacer"></div>
+      <button id="logoutBtn" class="btn primary" type="button">Log out</button>
+    </div>
+  </header>
+
+  <main class="student-wrap">
+    <div class="container student-grid">
+      <!-- Filters -->
+      <aside class="panel">
+        <h3 class="panel-title">Browse sessions</h3>
+        <p class="muted tiny-top">Filter by code, day, time, and mode.</p>
+
+        <div class="field">
+          <label for="filter-code">Course code</label>
+          <input id="filter-code" class="input" placeholder="e.g. CO2039" style="text-transform: uppercase;">
+        </div>
+
+        <div class="field">
+          <label>Day of week</label>
+          <div class="chips" id="day-chips"></div>
+        </div>
+
+        <div class="field">
+          <label>Availability</label>
+          <div class="range">
+            <input type="range" id="from-hour" min="0" max="24" value="0">
+            <input type="range" id="to-hour" min="0" max="24" value="24">
+            <div class="muted" id="range-label">0:00 - 24:00</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Mode</label>
+          <div class="toggle-row">
+            <button id="mode-online" class="toggle on" type="button">Online</button>
+            <button id="mode-campus" class="toggle on" type="button">On campus</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <button id="reset-filters" class="btn ghost full" type="button">Reset filters</button>
+        </div>
+      </aside>
+
+      <!-- Courses + registration -->
+      <section class="panel">
+        <div class="list-head" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <div>
+            <h3 class="panel-title">Available sessions</h3>
+            <p class="muted tiny-top">Pick a slot and add it to your registration.</p>
+          </div>
+          <div class="muted" id="courses-count">0 course(s)</div>
+        </div>
+
+        <div id="courses-error" class="course-error" style="display:none;"></div>
+        <div id="courses-loading" class="muted" style="padding:8px 0;">Loading sessions...</div>
+        <div class="course-list" id="courses-list"></div>
+        <div id="courses-empty" class="empty-state" style="display:none;">
+          <div class="empty-title">No sessions match these filters</div>
+          <p class="muted">Try widening your time range or toggling modes.</p>
+        </div>
+
+        <div class="pager">
+          <button class="btn tiny ghost" id="prev-page" type="button">Previous</button>
+          <div class="muted" id="page-info">Page 1 / 1</div>
+          <button class="btn tiny ghost" id="next-page" type="button">Next</button>
+        </div>
+
+        <div class="reg-section">
+          <div class="reg-head">
+            <h3 class="panel-title">Course registration</h3>
+            <button class="btn small primary" id="confirm-btn" type="button">Confirm</button>
+          </div>
+          <ul id="reg-list" class="reg-list"></ul>
+        </div>
+      </section>
+
+      <!-- Messages -->
+      <aside class="panel msg-panel">
+        <div class="msg-header">
+          <div class="msg-profile">
+            <div class="msg-avatar" id="msg-avatar">ST</div>
+            <div class="msg-profile-text">
+              <div class="msg-profile-name" id="msg-name">Student</div>
+              <div class="msg-profile-role muted">Student</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="msg-search-row">
+          <input class="input msg-search" placeholder="Search" readonly>
+          <button class="msg-search-btn" type="button" aria-label="Search">Search</button>
+        </div>
+
+        <div class="msg-sections">
+          <button class="msg-section-toggle" type="button" id="toggle-groups">
+            <span>Group</span><span id="group-count">(0)</span>
+          </button>
+          <div class="threads" id="group-threads"></div>
+
+          <button class="msg-section-toggle" type="button" id="toggle-directs">
+            <span>Private</span><span id="direct-count">(0)</span>
+          </button>
+          <div class="threads" id="direct-threads"></div>
+        </div>
+
+        <div class="msg-window">
+          <div class="msg-window-header">
+            <strong id="active-conv-title">Select a conversation</strong>
+          </div>
+          <div class="msg-window-body" id="message-list">
+            <div class="muted">Pick a group or private chat to start messaging.</div>
+          </div>
+          <div class="msg-compose">
+            <input class="input" id="message-input" placeholder="Write a message...">
+            <button class="btn primary small" id="send-message" type="button">Send</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container" style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between;">
+      <div>(c) 2025 HCMUT - Privacy - Terms</div>
+      <div>Support: <a href="mailto:support@hcmut.edu.vn">support@hcmut.edu.vn</a></div>
+    </div>
+  </footer>
+
+  <script src="/static/js/student.js"></script>
+</body>
+</html>

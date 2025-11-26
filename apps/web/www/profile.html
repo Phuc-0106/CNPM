@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BKTutor | Profile</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav-inner">
+      <a class="nav-brand" href="/student.html" aria-label="Student Home">
+        <img src="/static/images/hcmut.svg" alt="BKTutor">
+        <span>BKTutor</span>
+      </a>
+      <nav class="nav-links">
+        <a href="/student.html">Home</a>
+        <a href="/profile.html" class="active">Profile</a>
+      </nav>
+      <div class="spacer"></div>
+      <button id="logoutBtn" class="btn primary" type="button">Log out</button>
+    </div>
+  </header>
+
+  <main class="student-wrap">
+    <div class="container profile-grid">
+      <!-- Left: profile + preferences + history -->
+      <section class="panel">
+        <div class="profile-card">
+          <div class="avatar-large" id="profile-avatar">ST</div>
+          <div class="profile-main-text">
+            <div class="profile-name" id="profile-name">Student</div>
+            <div class="profile-line">Email: <span id="profile-email">-</span></div>
+            <div class="profile-line">ID: <span id="profile-id">-</span></div>
+            <div class="profile-line">Major: <span id="profile-major">-</span></div>
+            <div class="profile-line">Phone: <span id="profile-phone">-</span></div>
+          </div>
+          <button class="btn full small primary" id="edit-profile-btn" type="button">Edit profile</button>
+        </div>
+
+        <div class="profile-section">
+          <div class="align">
+            <h4 class="profile-subtitle">Bio</h4>
+            <button class="btn tiny ghost" id="bio-see-all" type="button">See all</button>
+          </div>
+          <div class="history-list">
+            <div class="history-item" id="profile-bio">No bio yet.</div>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <div class="align">
+            <h4 class="profile-subtitle">History</h4>
+            <button class="btn tiny ghost" id="history-see-all" type="button">See all</button>
+          </div>
+          <div class="history-block">
+            <div class="history-title">Session Attendance</div>
+            <div class="history-list" id="history-attendance"></div>
+          </div>
+          <div class="history-block">
+            <div class="history-title">Session Booking</div>
+            <div class="history-list" id="history-bookings"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Middle: booked sessions -->
+      <section class="panel">
+        <div class="booked-header" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <h3 class="panel-title">Booked Sessions</h3>
+          <div class="muted" id="booked-count"></div>
+        </div>
+
+        <div class="booked-tabs">
+          <button id="tab-recent" class="booked-tab booked-tab-active" type="button">Recently added</button>
+          <button id="tab-all" class="booked-tab" type="button">All sessions</button>
+        </div>
+
+        <div class="booked-list" id="booked-list"></div>
+      </section>
+
+      <!-- Right: progress + stats + resources -->
+      <section class="panel">
+        <div class="progress-section">
+          <h4 class="profile-subtitle">Progress</h4>
+          <div class="progress-list" id="progress-list"></div>
+        </div>
+
+        <div class="stats-section">
+          <h4 class="profile-subtitle">Stats</h4>
+          <div class="stats-line">Hours studied: <strong id="stat-hours">0</strong></div>
+          <div class="stats-line">Sessions attended: <strong id="stat-sessions">0</strong></div>
+        </div>
+
+        <div class="profile-section">
+          <div class="align">
+            <h4 class="profile-subtitle">Downloaded resources</h4>
+            <button class="btn tiny ghost" id="resources-see-all" type="button">See all</button>
+          </div>
+          <div id="resources-list" class="history-list"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container" style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between;">
+      <div>(c) 2025 HCMUT - Privacy - Terms</div>
+      <div>Support: <a href="mailto:support@hcmut.edu.vn">support@hcmut.edu.vn</a></div>
+    </div>
+  </footer>
+
+  <!-- Edit profile modal -->
+  <div id="edit-modal" class="modal-backdrop" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit profile</h3>
+        <button id="modal-close" class="modal-close" aria-label="Close">×</button>
+      </div>
+      <form id="modal-form">
+        <div class="modal-body">
+          <div class="modal-grid">
+            <div class="avatar-upload">
+              <div class="avatar-preview" id="modal-avatar-preview">ST</div>
+              <label class="btn tiny ghost" for="modal-avatar">Change photo</label>
+              <input id="modal-avatar" type="file" accept="image/*" style="display:none;">
+              <p class="muted tiny-top">PNG/JPG, cropped to square.</p>
+            </div>
+
+            <div class="modal-fields">
+              <div class="modal-field">
+                <label class="modal-label" for="modal-name">Full name</label>
+                <input id="modal-name" class="input modal-input" required>
+              </div>
+              <div class="modal-field">
+                <label class="modal-label" for="modal-phone">Phone</label>
+                <input id="modal-phone" class="input modal-input" placeholder="+84 ...">
+              </div>
+            <div class="modal-field">
+              <label class="modal-label" for="modal-major">Major</label>
+              <input id="modal-major" class="input modal-input">
+            </div>
+            <div class="modal-field">
+              <label class="modal-label" for="modal-bio">Bio</label>
+              <textarea id="modal-bio" class="input modal-input" rows="3"></textarea>
+            </div>
+            <div class="modal-field">
+              <label class="modal-label" for="modal-email">Email</label>
+              <input id="modal-email" class="input modal-input modal-readonly" readonly>
+            </div>
+              <div class="modal-field">
+                <label class="modal-label" for="modal-studentId">Student ID</label>
+                <input id="modal-studentId" class="input modal-input modal-readonly" readonly>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn ghost" id="modal-cancel">Cancel</button>
+          <button type="submit" class="btn primary">Save changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/js/profile.js"></script>
+</body>
+</html>

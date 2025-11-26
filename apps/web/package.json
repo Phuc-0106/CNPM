@@ -1,0 +1,14 @@
+{
+  "name": "web-static",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "npm run serve",
+    "serve": "http-server ./www -p 5173 -a 0.0.0.0 -c-1",
+    "build": "echo \"Static site - nothing to build\"",
+    "lint": "echo \"No lint configured for static site\""
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

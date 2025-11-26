@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BKTutor | Login</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav-inner">
+      <a class="nav-brand" href="/" aria-label="BKTutor Home">
+        <img src="/static/images/hcmut.svg" alt="BKTutor">
+        <span>BKTutor</span>
+      </a>
+      <div class="spacer"></div>
+      <a class="btn ghost" href="/">Back</a>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="container">
+      <h1 style="text-align:center; margin-bottom: 6px;">Welcome back</h1>
+      <p class="muted" style="text-align:center; margin-top:0;">Use your campus email and password.</p>
+
+      <div class="form-card">
+        <form id="login-form">
+          <div class="form-field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="username" required placeholder="student@hcmut.edu.vn">
+          </div>
+          <div class="form-field">
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Enter password">
+          </div>
+          <button class="btn primary" type="submit" style="width:100%;">Login</button>
+          <div id="login-message" class="message" style="display:none;"></div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container" style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between;">
+      <div>(c) 2025 HCMUT - Privacy - Terms</div>
+      <div>Support: <a href="mailto:support@hcmut.edu.vn">support@hcmut.edu.vn</a></div>
+    </div>
+  </footer>
+
+  <script src="/static/js/login.js"></script>
+</body>
+</html>
