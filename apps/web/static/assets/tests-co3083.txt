@@ -1,0 +1,7 @@
+Parallel Computing Seminar - Practice Tests
+-------------------------------------------
+- Quiz A: synchronization basics
+- Quiz B: parallel patterns
+- Exercise: profiling a parallel loop
+
+Download and use as a checklist.

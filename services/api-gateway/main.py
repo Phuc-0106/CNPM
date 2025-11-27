@@ -12,6 +12,7 @@ STUDENTS_UPSTREAM = os.getenv("STUDENTS_UPSTREAM", "http://localhost:4011")
 USERS_UPSTREAM = os.getenv("USERS_UPSTREAM", "http://localhost:4015")
 SESSIONS_UPSTREAM = os.getenv("SESSIONS_UPSTREAM", "http://localhost:4016")
 MESSAGES_UPSTREAM = os.getenv("MESSAGES_UPSTREAM", "http://localhost:4017")
+LIBRARY_UPSTREAM = os.getenv("LIBRARY_UPSTREAM", "http://localhost:4018")
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret")
 ALGORITHM = "HS256"
 COOKIE_NAME = "access_token"
@@ -122,10 +123,6 @@ async def students_proxy(path: str, request: Request):
 async def students_register(request: Request):
     return await proxy_request(STUDENTS_UPSTREAM, "register", request)
 
-@app.api_route("/users/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
-async def users_proxy(path: str, request: Request):
-    return await proxy_request(USERS_UPSTREAM, path, request)
-
 @app.api_route("/sessions/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
 async def sessions_proxy(path: str, request: Request):
     return await proxy_request(SESSIONS_UPSTREAM, path, request)
@@ -151,17 +148,16 @@ async def courses_proxy(path: str, request: Request):
 
 @app.api_route("/messaging", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
 async def messaging_root(request: Request):
-    return await proxy_request(STUDENTS_UPSTREAM, "messaging", request)
+    return await proxy_request(MESSAGES_UPSTREAM, "", request)
 
-
-@app.api_route("/messaging/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
-async def messaging_proxy(path: str, request: Request):
-    return await proxy_request(STUDENTS_UPSTREAM, f"messaging/{path}", request)
+@app.api_route("/library/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+async def library_proxy(path: str, request: Request):
+    return await proxy_request(LIBRARY_UPSTREAM, path, request)
 
 
 @app.api_route("/users/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
 async def users_proxy(path: str, request: Request):
-    return await proxy_request(STUDENTS_UPSTREAM, f"users/{path}", request)
+    return await proxy_request(USERS_UPSTREAM, path, request)
 
 
 if __name__ == "__main__":

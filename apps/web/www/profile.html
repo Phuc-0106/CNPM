@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BKTutor | Profile</title>
-  <link rel="stylesheet" href="/static/css/main.css">
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/components.css">
+  <link rel="stylesheet" href="/static/css/profile.css">
 </head>
 <body>
   <header class="nav">
@@ -25,7 +27,7 @@
   <main class="student-wrap">
     <div class="container profile-grid">
       <!-- Left: profile + preferences + history -->
-      <section class="panel">
+      <section class="panel profile-left">
         <div class="profile-card">
           <div class="avatar-large" id="profile-avatar">ST</div>
           <div class="profile-main-text">
@@ -41,7 +43,6 @@
         <div class="profile-section">
           <div class="align">
             <h4 class="profile-subtitle">Bio</h4>
-            <button class="btn tiny ghost" id="bio-see-all" type="button">See all</button>
           </div>
           <div class="history-list">
             <div class="history-item" id="profile-bio">No bio yet.</div>
@@ -65,7 +66,7 @@
       </section>
 
       <!-- Middle: booked sessions -->
-      <section class="panel">
+      <section class="panel booked-panel">
         <div class="booked-header" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
           <h3 class="panel-title">Booked Sessions</h3>
           <div class="muted" id="booked-count"></div>
@@ -76,11 +77,26 @@
           <button id="tab-all" class="booked-tab" type="button">All sessions</button>
         </div>
 
-        <div class="booked-list" id="booked-list"></div>
+        <div class="booked-list sessions-scroll" id="booked-list"></div>
+      </section>
+
+      <!-- Attended sessions -->
+      <section class="panel attended-panel">
+        <div class="booked-header" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <h3 class="panel-title">Attended Sessions</h3>
+          <div class="muted" id="attended-count"></div>
+        </div>
+
+        <div class="booked-tabs">
+          <button id="att-tab-recent" class="booked-tab booked-tab-active" type="button">Recently attended</button>
+          <button id="att-tab-all" class="booked-tab" type="button">All attended</button>
+        </div>
+
+        <div class="attended-list sessions-scroll" id="attended-list"></div>
       </section>
 
       <!-- Right: progress + stats + resources -->
-      <section class="panel">
+      <section class="panel progress-panel">
         <div class="progress-section">
           <h4 class="profile-subtitle">Progress</h4>
           <div class="progress-list" id="progress-list"></div>

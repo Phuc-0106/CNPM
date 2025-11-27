@@ -1,7 +1,13 @@
 const API_BASE = (() => {
   if (window.API_BASE) return window.API_BASE;
-  const { protocol, hostname, port } = window.location;
-  if (port === "5173") return `${protocol}//${hostname}:4000`;
+  const { protocol, hostname } = window.location;
+  const localHostnames =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "0.0.0.0" ||
+    hostname.startsWith("192.168.") ||
+    hostname.startsWith("172.");
+  if (localHostnames) return `${protocol}//${hostname}:4000`;
   return "/api";
 })();
 
@@ -18,6 +24,7 @@ const state = {
   selectedDays: [],
   page: 1,
   pageSize: 4,
+  profile: null,
   courses: [],
   cart: [],
   registered: new Set(),
@@ -49,6 +56,7 @@ const els = {
   confirm: document.querySelector("#confirm-btn"),
   msgAvatar: document.querySelector("#msg-avatar"),
   msgName: document.querySelector("#msg-name"),
+  msgId: document.querySelector("#msg-id"),
   groupThreads: document.querySelector("#group-threads"),
   directThreads: document.querySelector("#direct-threads"),
   groupCount: document.querySelector("#group-count"),
@@ -219,11 +227,40 @@ function renderMessages() {
 }
 
 function renderSidebar() {
-  if (!state.sidebar) return;
-  const me = state.sidebar.me || {};
+  if (!state.sidebar && !state.profile) return;
+  const sidebar = state.sidebar || {};
+  const profileMe = state.profile?.me || {};
+  const sidebarMe = sidebar.me || {};
+  const me = { ...sidebarMe, ...profileMe }; // profile data overrides sidebar defaults
 
-  els.msgAvatar.textContent = (me.displayName || me.email || "ST").slice(0, 2).toUpperCase();
-  els.msgName.textContent = me.displayName || me.email || "Student";
+  const display =
+    profileMe.fullName ||
+    profileMe.displayName ||
+    sidebarMe.fullName ||
+    sidebarMe.displayName ||
+    profileMe.email ||
+    sidebarMe.email ||
+    "ST";
+  const avatarUrl = profileMe.avatarUrl || sidebarMe.avatarUrl;
+
+  els.msgAvatar.innerHTML = "";
+  els.msgAvatar.textContent = display.slice(0, 2).toUpperCase();
+  if (avatarUrl) {
+    const img = document.createElement("img");
+    img.src = avatarUrl;
+    img.alt = display;
+    img.style.width = "100%";
+    img.style.height = "100%";
+    img.style.objectFit = "cover";
+    img.style.borderRadius = "50%";
+    els.msgAvatar.innerHTML = "";
+    els.msgAvatar.appendChild(img);
+  }
+  els.msgName.textContent = display;
+  if (els.msgId) {
+    const sid = profileMe.studentId || profileMe.id || sidebarMe.id || "";
+    els.msgId.textContent = sid ? `ID: ${sid}` : "";
+  }
 
   const renderThreads = (container, threads) => {
     container.innerHTML = "";
@@ -245,11 +282,11 @@ function renderSidebar() {
     });
   };
 
-  renderThreads(els.groupThreads, state.sidebar.groups || []);
-  renderThreads(els.directThreads, state.sidebar.directs || []);
+  renderThreads(els.groupThreads, sidebar.groups || []);
+  renderThreads(els.directThreads, sidebar.directs || []);
 
-  els.groupCount.textContent = `(${state.sidebar.groups?.length ?? 0})`;
-  els.directCount.textContent = `(${state.sidebar.directs?.length ?? 0})`;
+  els.groupCount.textContent = `(${sidebar.groups?.length ?? 0})`;
+  els.directCount.textContent = `(${sidebar.directs?.length ?? 0})`;
 
   els.groupThreads.classList.toggle("collapsed", !openGroups);
   els.directThreads.classList.toggle("collapsed", !openDirects);
@@ -302,16 +339,33 @@ async function fetchCourses() {
   }
 }
 
-async function fetchRegistered() {
+async function fetchProfileAndRegistered() {
   try {
-    const res = await fetch(api("/students/profile"), { credentials: "include" });
-    if (!res.ok) return;
-    const data = await res.json();
-    const set = new Set();
-    (data.bookedSessions || data.bookings || []).forEach((s) => {
-      if (s.sessionId) set.add(s.sessionId);
+    const [studentsRes, usersRes] = await Promise.all([
+      fetch(api("/students/profile"), { credentials: "include" }),
+      fetch(api("/users/student/profile"), { credentials: "include" }),
+    ]);
+
+    if (studentsRes.status === 401 || usersRes.status === 401) {
+      window.location.href = "/login.html";
+      return;
+    }
+
+    const studentsData = studentsRes.ok ? await studentsRes.json() : null;
+    const usersData = usersRes.ok ? await usersRes.json() : null;
+
+    const studentMe = studentsData?.student || studentsData?.me || {};
+    const userMe = usersData?.me || usersData?.student || {};
+    const me = { ...userMe, ...studentMe }; // prefer freshest data from students service
+
+    state.profile = { me, students: studentsData, users: usersData };
+
+    const registeredSet = new Set();
+    (studentsData?.bookedSessions || studentsData?.bookings || []).forEach((s) => {
+      if (s.sessionId) registeredSet.add(s.sessionId);
     });
-    state.registered = set;
+    state.registered = registeredSet;
+    renderSidebar();
   } catch (err) {
     console.error(err);
   }
@@ -514,7 +568,7 @@ function attachEvents() {
   formatHourLabel();
   attachEvents();
   await checkSession();
-  await fetchRegistered();
+  await fetchProfileAndRegistered();
   fetchSidebar();
   refreshCourses();
   renderCart();

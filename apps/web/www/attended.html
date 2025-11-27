@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attended Session</title>
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/components.css">
+  <link rel="stylesheet" href="/static/css/session.css">
+</head>
+<body class="student-wrap">
+  <header class="nav">
+    <div class="container nav-inner">
+      <a class="nav-brand" href="/student.html">
+        <img src="/static/images/hcmut.svg" alt="BKTutor">
+        <span>BKTutor</span>
+      </a>
+      <nav class="nav-links">
+        <a href="/student.html">Home</a>
+        <a href="/profile.html">Profile</a>
+      </nav>
+      <div class="spacer"></div>
+      <button id="nav-logout" class="btn primary" type="button">Log out</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="container">
+      <section class="panel" style="margin-bottom:16px;">
+        <h2 id="att-title">Attended session</h2>
+        <div class="muted" id="att-tutor"></div>
+        <div class="course-tags" id="att-tags"></div>
+      </section>
+
+      <section class="panel">
+        <h3>Session overview</h3>
+        <div class="muted tiny-top" id="att-description"></div>
+        <div class="session-meta">
+          <div><span class="muted">Code</span><div id="att-code">-</div></div>
+          <div><span class="muted">Mode</span><div id="att-mode">-</div></div>
+          <div><span class="muted">Time</span><div id="att-time">-</div></div>
+          <div><span class="muted">Day</span><div id="att-day">-</div></div>
+          <div><span class="muted">Completed</span><div id="att-completed">-</div></div>
+        </div>
+
+        <div class="progress-box">
+          <div class="progress-header">
+            <strong>Progress</strong>
+            <span id="att-progress-pct">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-bar-fill" id="att-progress-bar" style="width:0%;"></div>
+          </div>
+        </div>
+
+        <hr class="section-divider">
+      </section>
+
+      <section class="panel">
+        <h3>Syllabus</h3>
+        <div class="resource-list" id="att-syllabus"></div>
+      </section>
+
+      <section class="panel">
+        <h3>Videos</h3>
+        <div class="resource-list" id="att-videos"></div>
+      </section>
+
+      <section class="panel">
+        <h3>Tests</h3>
+        <div class="resource-list" id="att-tests"></div>
+      </section>
+
+      <section class="panel">
+        <h3>Resources</h3>
+        <div class="resource-list" id="att-resources"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container" style="display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;">
+      <div>(c) 2025 HCMUT - Privacy - Terms</div>
+      <div>Support: <a href="mailto:support@hcmut.edu.vn">support@hcmut.edu.vn</a></div>
+    </div>
+  </footer>
+
+  <script src="/static/js/attended.js"></script>
+</body>
+</html>

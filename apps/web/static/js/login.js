@@ -10,9 +10,14 @@ function showMessage(text, type) {
 
 const API_BASE = (() => {
   if (window.API_BASE) return window.API_BASE;
-  const { protocol, hostname, port } = window.location;
-  // use same host to keep cookies same-site in dev
-  if (port === "5173") return `${protocol}//${hostname}:4000`;
+  const { protocol, hostname } = window.location;
+  const localHostnames =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "0.0.0.0" ||
+    hostname.startsWith("192.168.") ||
+    hostname.startsWith("172.");
+  if (localHostnames) return `${protocol}//${hostname}:4000`;
   return "/api";
 })();
 

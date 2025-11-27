@@ -33,5 +33,6 @@ start_service "services/students" 4011 "students"
 start_service "services/users" 4015 "users"
 start_service "services/sessions" 4016 "sessions"
 start_service "services/messages" 4017 "messages"
+start_service "services/library" 4018 "library"
 
 echo "[run] done. Logs in $LOGDIR (e.g., tail -f logs/api-gateway.log)"

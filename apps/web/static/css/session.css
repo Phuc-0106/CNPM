@@ -1,0 +1,49 @@
+/* Session detail tweaks */
+.course-tags {
+  margin-top: 8px;
+}
+
+#cancel-form .btn,
+#resched-form .btn {
+  margin-top: 10px;
+  align-self: flex-start;
+}
+
+.session-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.progress-box {
+  margin-top: 12px;
+}
+
+.resource-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.section-divider {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 16px 0;
+}
+
+.resource-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--surface-2);
+}
+
+.resource-title {
+  font-weight: 700;
+}
+
+.resource-meta {
+  color: var(--muted);
+  margin-top: 4px;
+}

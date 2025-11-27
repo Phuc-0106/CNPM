@@ -1,0 +1,7 @@
+Parallel Computing Seminar - Extra Resources
+-------------------------------------------
+- Slide deck (PDF) summary
+- Example code (C/C++) sample
+- Further reading list
+
+Prepared for demo downloads.

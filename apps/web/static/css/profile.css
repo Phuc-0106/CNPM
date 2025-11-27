@@ -1,0 +1,205 @@
+.profile-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr 280px;
+  gap: 16px;
+  padding: 22px 0 50px;
+  align-items: start;
+}
+
+.profile-card {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 90px 1fr;
+  align-items: center;
+}
+
+.avatar-large {
+  width: 90px;
+  height: 90px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 22px;
+}
+
+.profile-main-text {
+  display: grid;
+  gap: 6px;
+}
+
+.profile-name {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.profile-line span {
+  color: var(--muted);
+}
+
+.profile-section {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.profile-section .align {
+  margin-bottom: 8px;
+}
+
+.profile-subtitle {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+
+.history-block {
+  margin-bottom: 14px;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.history-item {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.history-date {
+  font-weight: 700;
+}
+
+.booked-list,
+.attended-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 320px;
+  min-height: 220px;
+  overflow-y: scroll;
+  padding-right: 6px;
+  scrollbar-gutter: stable both-edges;
+}
+
+.booked-card,
+.attended-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--surface-2);
+}
+
+.booked-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.booked-dates {
+  display: flex;
+  gap: 14px;
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.booked-tabs {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.booked-tab {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+}
+
+.booked-tab-active {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.5);
+}
+
+.progress-section {
+  margin-bottom: 16px;
+}
+
+.progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.progress-item {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 8px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.profile-form-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.profile-left {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.booked-panel {
+  grid-column: 2;
+}
+
+.attended-panel {
+  grid-column: 2;
+}
+
+.progress-panel {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+}

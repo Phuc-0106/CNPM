@@ -118,6 +118,112 @@ def build_sessions() -> List[Dict[str, object]]:
 SESSIONS: List[Dict[str, object]] = build_sessions()
 
 
+def december_date(day: int, hour: int = 9) -> str:
+    now = datetime.utcnow()
+    year = now.year if now.month <= 12 else now.year + 1
+    return datetime(year, 12, day, hour, 0, 0).isoformat() + "Z"
+
+
+ATTENDED_SESSIONS: List[Dict[str, object]] = [
+    {
+        "id": "att-1",
+        "sessionId": "sess-5",
+        "code": "CO3005",
+        "title": "Software Engineering Workshop",
+        "tutor": "Dr. Nguyen Lan",
+        "mode": "On campus",
+        "dayOfWeek": "MON",
+        "start": "09:00",
+        "end": "11:00",
+        "description": "Hands-on recap of agile practices and design reviews.",
+        "completedAt": december_date(1, 10),
+        "resources": [
+            {"id": "lib-resources", "name": "Slides (PDF)", "size": "2.3 MB", "url": "/library/resources/lib-resources/download"},
+            {"id": "lib-resources", "name": "Demo source code", "size": "840 KB", "url": "/library/resources/lib-resources/download"},
+        ],
+        "progress": 100,
+        "library": {
+            "syllabus": [{"id": "lib-syllabus", "name": "Workshop syllabus", "size": "320 KB", "url": "/library/resources/lib-syllabus/download"}],
+            "videos": [{"id": "lib-videos", "name": "Workshop recap videos", "size": "1.2 MB", "url": "/library/resources/lib-videos/download"}],
+            "tests": [{"id": "lib-tests", "name": "Practice tests", "size": "540 KB", "url": "/library/resources/lib-tests/download"}],
+            "resources": [{"id": "lib-resources", "name": "Extra resources", "size": "450 KB", "url": "/library/resources/lib-resources/download"}],
+        },
+    },
+    {
+        "id": "att-2",
+        "sessionId": "sess-12",
+        "code": "CO3011",
+        "title": "Compiler Construction Lab",
+        "tutor": "Tran Huy",
+        "mode": "Online",
+        "dayOfWeek": "TUE",
+        "start": "13:00",
+        "end": "15:00",
+        "description": "Parser and lexer exercises with a mini-compiler.",
+        "completedAt": december_date(2, 14),
+        "resources": [
+            {"id": "lib-resources", "name": "Grammar files", "size": "120 KB", "url": "/library/resources/lib-resources/download"},
+            {"id": "lib-resources", "name": "Lab guide", "size": "1.1 MB", "url": "/library/resources/lib-resources/download"},
+        ],
+        "progress": 100,
+        "library": {
+            "syllabus": [{"id": "lib-syllabus", "name": "Compiler lab syllabus", "size": "280 KB", "url": "/library/resources/lib-syllabus/download"}],
+            "videos": [{"id": "lib-videos", "name": "Lab videos", "size": "1.1 MB", "url": "/library/resources/lib-videos/download"}],
+            "tests": [{"id": "lib-tests", "name": "Parser drills", "size": "480 KB", "url": "/library/resources/lib-tests/download"}],
+            "resources": [{"id": "lib-resources", "name": "Lab resources", "size": "520 KB", "url": "/library/resources/lib-resources/download"}],
+        },
+    },
+    {
+        "id": "att-3",
+        "sessionId": "sess-25",
+        "code": "CO2013",
+        "title": "Operating Systems Review",
+        "tutor": "Le Binh Dang",
+        "mode": "On campus",
+        "dayOfWeek": "WED",
+        "start": "15:00",
+        "end": "17:00",
+        "description": "Kernel scheduling walkthrough with practice questions.",
+        "completedAt": december_date(3, 16),
+        "resources": [
+            {"id": "lib-resources", "name": "Process scheduling notes", "size": "640 KB", "url": "/library/resources/lib-resources/download"},
+            {"id": "lib-resources", "name": "Practice questions", "size": "410 KB", "url": "/library/resources/lib-resources/download"},
+        ],
+        "progress": 100,
+        "library": {
+            "syllabus": [{"id": "lib-syllabus", "name": "OS review syllabus", "size": "300 KB", "url": "/library/resources/lib-syllabus/download"}],
+            "videos": [{"id": "lib-videos", "name": "Review videos", "size": "1.0 MB", "url": "/library/resources/lib-videos/download"}],
+            "tests": [{"id": "lib-tests", "name": "OS practice", "size": "420 KB", "url": "/library/resources/lib-tests/download"}],
+            "resources": [{"id": "lib-resources", "name": "Reference kit", "size": "400 KB", "url": "/library/resources/lib-resources/download"}],
+        },
+    },
+    {
+        "id": "att-4",
+        "sessionId": "sess-40",
+        "code": "CO3083",
+        "title": "Parallel Computing Seminar",
+        "tutor": "Mai Xuan Toan",
+        "mode": "Online",
+        "dayOfWeek": "THU",
+        "start": "18:00",
+        "end": "20:00",
+        "description": "Case studies on parallel patterns and performance.",
+        "completedAt": december_date(4, 19),
+        "resources": [
+            {"id": "lib-resources", "name": "Slide deck", "size": "2.0 MB", "url": "/library/resources/lib-resources/download"},
+            {"id": "lib-resources", "name": "Example code", "size": "950 KB", "url": "/library/resources/lib-resources/download"},
+        ],
+        "progress": 100,
+        "library": {
+            "syllabus": [{"id": "lib-syllabus", "name": "Parallel seminar syllabus", "size": "310 KB", "url": "/library/resources/lib-syllabus/download"}],
+            "videos": [{"id": "lib-videos", "name": "Seminar videos", "size": "1.3 MB", "url": "/library/resources/lib-videos/download"}],
+            "tests": [{"id": "lib-tests", "name": "Parallel tests", "size": "560 KB", "url": "/library/resources/lib-tests/download"}],
+            "resources": [{"id": "lib-resources", "name": "Example code", "size": "950 KB", "url": "/library/resources/lib-resources/download"}],
+        },
+    },
+]
+
+
 def require_user(request: Request) -> str:
     token = request.cookies.get(COOKIE_NAME)
     if not token:
@@ -142,6 +248,19 @@ async def list_sessions(user_id=Depends(require_user)):
 @app.get("/browse")
 async def browse_sessions(_user_id=Depends(require_user)):
     return {"ok": True, "sessions": SESSIONS}
+
+
+@app.get("/attended")
+async def attended_sessions(_user_id=Depends(require_user)):
+    return {"ok": True, "attended": ATTENDED_SESSIONS}
+
+
+@app.get("/attended/{att_id}")
+async def attended_detail(att_id: str, _user_id=Depends(require_user)):
+    item = next((a for a in ATTENDED_SESSIONS if a["id"] == att_id), None)
+    if not item:
+        raise HTTPException(status_code=404, detail="not found")
+    return {"ok": True, "attended": item}
 
 
 if __name__ == "__main__":

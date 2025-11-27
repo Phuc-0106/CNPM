@@ -1,0 +1,7 @@
+Parallel Computing Seminar - Video Links
+---------------------------------------
+- Intro lecture: https://example.com/videos/pc-intro
+- Patterns walkthrough: https://example.com/videos/pc-patterns
+- Lab recap: https://example.com/videos/pc-lab
+
+Tip: copy a link into your browser to view.

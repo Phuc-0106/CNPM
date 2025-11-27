@@ -1,0 +1,8 @@
+Parallel Computing Seminar - Syllabus
+--------------------------------------
+- Topic 1: Parallel patterns and architectures
+- Topic 2: Work partitioning and scheduling
+- Topic 3: Synchronization and contention
+- Topic 4: Performance tuning checklist
+
+Prepared by: Mai Xuan Toan
