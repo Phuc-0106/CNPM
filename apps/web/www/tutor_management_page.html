@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BKTutor | Manage</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/tutor_management_page.css">
+</head>
+
+<body>
+    <header class="nav">
+        <div class="container nav-inner">
+            <a class="nav-brand" href="/tutor_profile.html" aria-label="Tutor Home">
+                <img src="/static/images/hcmut.svg" alt="BKTutor">
+                <span>BKTutor</span>
+            </a>
+            <nav class="nav-links">
+                <a href="/tutor_profile.html">Profile</a>
+                <a href="/tutor_management_page.html" class="active">Manage</a>
+                <a href="/tutor_manage_session.html">Sessions</a>
+            </nav>
+            <div class="spacer"></div>
+            <button id="logoutBtn" class="btn primary" type="button">Log out</button>
+        </div>
+    </header>
+    <main>
+        <div class="container">
+            <div id="alertBox" class="alert"></div>
+
+            <div class="page-header">
+                <h1>Availability Management</h1>
+                <p>Configure your weekly schedule and manage your teaching availability</p>
+            </div>
+
+            <!-- Policy Limits -->
+            <div class="policy-card">
+                <div class="policy-header">
+                    📋 Policy Constraints
+                </div>
+                <div class="policy-grid">
+                    <div class="policy-item">
+                        <div class="label">Allowed Hours</div>
+                        <div class="value">7:00 - 22:00</div>
+                    </div>
+                    <div class="policy-item">
+                        <div class="label">Max Slots / Day</div>
+                        <div class="value">8 slots</div>
+                    </div>
+                    <div class="policy-item">
+                        <div class="label">Max Slots / Week</div>
+                        <div class="value">30 slots</div>
+                    </div>
+                    <div class="policy-item" id="weekUsageItem">
+                        <div class="label">Current Week Usage</div>
+                        <div class="value" id="weekUsage">0 / 30</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Week Controls -->
+            <div class="week-controls">
+                <div class="week-nav">
+                    <button id="prevWeek">◀</button>
+                    <div class="week-display" id="weekDisplay">Nov 25 - Dec 1, 2025</div>
+                    <button id="nextWeek">▶</button>
+                </div>
+                <div class="spacer"></div>
+                <button class="btn secondary" id="copyLastWeek">📋 Copy Last Week</button>
+                <button class="btn danger" id="bulkDeleteUnpublished">🗑️ Bulk Delete Unpublished</button>
+            </div>
+
+            <!-- Calendar -->
+            <div class="calendar-card">
+                <div class="calendar-legend">
+                    <div class="legend-item">
+                        <div class="legend-color available"></div>
+                        <span>Available Slots</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color booked"></div>
+                        <span>Booked Sessions</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color exception"></div>
+                        <span>Exceptions</span>
+                    </div>
+                </div>
+                <div id="calendarContainer"></div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="availability">Availability Slots</button>
+                <button class="tab" data-tab="requests">Booking Requests</button>
+                <button class="tab" data-tab="exceptions">Exceptions</button>
+            </div>
+
+            <!-- Availability Slots Table -->
+            <div class="tab-content active" id="availabilityTab">
+                <div class="slots-table-card">
+                    <div class="table-header">
+                        <h2>Availability Slots</h2>
+                        <div class="table-actions">
+                            <button class="btn success" id="addSlotBtn">➕ Add Slots</button>
+                            <button class="btn primary" id="publishAllBtn">✓ Publish All</button>
+                        </div>
+                    </div>
+                    <table id="slotsTable">
+                        <thead>
+                            <tr>
+                                <th>Day</th>
+                                <th>Time</th>
+                                <th>Duration</th>
+                                <th>Mode</th>
+                                <th>Location</th>
+                                <th>Capacity</th>
+                                <th>Lead Time</th>
+                                <th>Cancel Window</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="slotsTableBody">
+                            <tr>
+                                <td colspan="10" style="text-align: center; padding: 40px; color: #64748b;">
+                                    No availability slots configured for this week
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Exceptions Tab -->
+            <div class="tab-content" id="exceptionsTab">
+                <div class="slots-table-card">
+                    <div class="table-header">
+                        <h2>Blackout Dates & Exceptions</h2>
+                        <button class="btn success" id="addExceptionBtn">➕ Add Exception</button>
+                    </div>
+                    <table id="exceptionsTable">
+                        <thead>
+                            <tr>
+                                <th>Date/Time</th>
+                                <th>Reason</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="exceptionsTableBody">
+                            <tr>
+                                <td colspan="3" style="text-align: center; padding: 40px; color: #64748b;">
+                                    No exceptions configured
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Slot Modal -->
+    <div id="slotModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Add Availability Slot</div>
+            <form id="slotForm">
+                <div class="form-group">
+                    <label>Recurrence Type</label>
+                    <select id="recurrence">
+                        <option value="once">One-time</option>
+                        <option value="weekly">Weekly Recurring</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Day</label>
+                        <select id="slotDay" required>
+                            <option value="">Select day</option>
+                            <option value="Monday">Monday</option>
+                            <option value="Tuesday">Tuesday</option>
+                            <option value="Wednesday">Wednesday</option>
+                            <option value="Thursday">Thursday</option>
+                            <option value="Friday">Friday</option>
+                            <option value="Saturday">Saturday</option>
+                            <option value="Sunday">Sunday</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date (if one-time)</label>
+                        <input type="date" id="slotDate">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Time</label>
+                        <input type="time" id="startTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Duration (minutes)</label>
+                        <select id="duration" required>
+                            <option value="30">30 min</option>
+                            <option value="60" selected>60 min</option>
+                            <option value="90">90 min</option>
+                            <option value="120">120 min</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Mode</label>
+                        <select id="mode" required>
+                            <option value="online">Online</option>
+                            <option value="offline">Offline</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Capacity</label>
+                        <input type="number" id="capacity" value="1" min="1" max="10" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Location (for offline mode)</label>
+                    <input type="text" id="location" placeholder="e.g., Room B1-101">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Lead Time (hours)</label>
+                        <input type="number" id="leadTime" value="24" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Cancel Window (hours)</label>
+                        <input type="number" id="cancelWindow" value="12" min="1" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn secondary" id="cancelSlotBtn">Cancel</button>
+                    <button type="submit" class="btn success">Save Slot</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Exception Modal -->
+    <div id="exceptionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Add Exception</div>
+            <form id="exceptionForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="date" id="exceptionStartDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>End Date</label>
+                        <input type="date" id="exceptionEndDate" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Time (optional)</label>
+                        <input type="time" id="exceptionStartTime">
+                    </div>
+                    <div class="form-group">
+                        <label>End Time (optional)</label>
+                        <input type="time" id="exceptionEndTime">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Reason</label>
+                    <textarea id="exceptionReason" rows="3" placeholder="e.g., Holiday, Conference, etc."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn secondary" id="cancelExceptionBtn">Cancel</button>
+                    <button type="submit" class="btn success">Save Exception</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <footer class="footer">
+        <div class="container" style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between;">
+            <div>(c) 2025 HCMUT - Privacy - Terms</div>
+            <div>Support: <a href="mailto:support@hcmut.edu.vn">support@hcmut.edu.vn</a></div>
+        </div>
+    </footer>
+    <script src="/static/js/tutor_management_page.js"></script>
+</body>
+
+</html>

@@ -27,11 +27,28 @@ function api(path) {
 }
 
 async function checkSession() {
+  
+  // const params = new URLSearchParams(window.location.search);
+  // if (params.get("logout")==="1" || params.get("stay")==="1") {
+  //   return;
+  // }
   try {
     const res = await fetch(api("/auth/me"), { credentials: "include" });
     if (res.ok) {
-      // already logged in -> go to student home
-      window.location.href = "/student.html";
+      const data = await res.json();
+      const role = data.user?.role;
+      if (role ==  "TUTOR")
+        { 
+      window.location.replace("/tutor_profile.html");
+        } 
+      else if (role == "ADMIN")
+      {
+        window.location.replace("/admin.html");
+      }
+      else
+      {
+        window.location.replace("/student.html");
+      }
     }
   } catch (err) {
     console.error(err);
@@ -64,8 +81,20 @@ async function handleLogin(event) {
     }
 
     showMessage("Logged in. Redirecting...", "success");
+    const role  =  payload.user?.role;
     setTimeout(() => {
-      window.location.href = "/student.html";
+      if (role ==  "TUTOR")
+        { 
+      window.location.replace("/tutor_profile.html");
+        } 
+      else if (role == "ADMIN")
+      {
+        window.location.replace("/admin.html");
+      }
+      else
+      {
+        window.location.replace("/student.html");
+      }
     }, 500);
   } catch (err) {
     console.error(err);

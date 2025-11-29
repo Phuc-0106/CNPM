@@ -33,6 +33,15 @@ USERS: Dict[str, Dict[str, Optional[str]]] = {
         "phone": None,
         "major": None,
     },
+    "tutor@hcmut.edu.vn":{
+        "id": "tut-001",
+        "email": "tutor@hcmut.edu.vn",
+        "password": "tutor123",
+        "role": "TUTOR",
+        "name": "Henry Cavil",
+        "phone": "+94 999 888 777",
+        "major": "Artificial Intelligence",
+    }
 }
 
 

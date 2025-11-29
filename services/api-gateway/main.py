@@ -13,6 +13,7 @@ USERS_UPSTREAM = os.getenv("USERS_UPSTREAM", "http://localhost:4015")
 SESSIONS_UPSTREAM = os.getenv("SESSIONS_UPSTREAM", "http://localhost:4016")
 MESSAGES_UPSTREAM = os.getenv("MESSAGES_UPSTREAM", "http://localhost:4017")
 LIBRARY_UPSTREAM = os.getenv("LIBRARY_UPSTREAM", "http://localhost:4018")
+TUTORS_UPSTREAM = os.getenv("TUTORS_UPSTREAM", "http://localhost:4019")
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret")
 ALGORITHM = "HS256"
 COOKIE_NAME = "access_token"
@@ -38,7 +39,7 @@ async def auth_guard(request: Request, call_next):
     path = request.url.path
     if request.method == "OPTIONS":
         return await call_next(request)
-    if path.startswith("/auth") or path in {"/health", "/students/health"}:
+    if path.startswith("/auth") or path in {"/health", "/students/health", "/tutors/health"}:
         return await call_next(request)
 
     token = request.cookies.get(COOKIE_NAME)
@@ -158,6 +159,15 @@ async def library_proxy(path: str, request: Request):
 @app.api_route("/users/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
 async def users_proxy(path: str, request: Request):
     return await proxy_request(USERS_UPSTREAM, path, request)
+
+@app.api_route("/tutors/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+async def tutors_proxy(path: str, request: Request):
+    return await proxy_request(TUTORS_UPSTREAM, path, request)
+
+
+@app.api_route("/tutors", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+async def tutors_root(request: Request):
+    return await proxy_request(TUTORS_UPSTREAM, "", request)
 
 
 if __name__ == "__main__":

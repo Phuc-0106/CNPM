@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BKTutor | Profile</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/tutor_profile.css">
+</head>
+
+<body>
+    <header class="nav">
+        <div class="container nav-inner">
+            <a class="nav-brand" href="/tutor_profile.html" aria-label="tutor Profile">
+                <img src="/static/images/hcmut.svg" alt="BKTutor">
+                <span>BKTutor</span>
+            </a>
+            <nav class="nav-links">
+                <a href="/tutor_profile.html" class="active">Profile</a>
+                <a href="/tutor_management_page.html">Manage</a>
+                <a href="/tutor_manage_session.html">Sessions</a>
+            </nav>
+            <div class="spacer"></div>
+            <button id="logoutBtn" class="btn primary" type="button">Log out</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="container profile-grid">
+            <!-- Left: Profile Preview -->
+            <section class="panel">
+                <div class="profile-card">
+                    <div class="avatar-large">
+                        <img id="profile-avatar" src="/static/images/perfect_cell.jpg" alt="tutor avatar">
+                    </div>
+                    <div class="profile-main-text">
+                        <div class="profile-name" id="profile-name">Loading...</div>
+                        <div class="profile-line">Email: <span id="profile-email">-</span></div>
+                        <div class="profile-line">ID: <span id="profile-id">-</span></div>
+                        <div class="profile-line">Major: <span id="profile-major">-</span></div>
+                    </div>
+                </div>
+
+                <div class="profile-teaching-mode">
+                    <div class="btn small primary" id="preview-inperson" style="display: none;">In-person</div>
+                    <div class="btn small primary" id="preview-online" style="display: none;">Online</div>
+                </div>
+
+                <div class="profile-section">
+                    <h4 class="profile-subtitle">Bio</h4>
+                    <div class="profile-item" id="profile-bio">No bio yet.</div>
+                </div>
+
+                <div class="profile-section">
+                    <h4 class="profile-subtitle">Languages</h4>
+                    <div id="preview-languages"></div>
+                </div>
+
+                <div class="profile-section">
+                    <h4 class="profile-subtitle">Skills</h4>
+                    <div id="preview-skills"></div>
+                </div>
+
+                <div class="profile-section">
+                    <h4 class="profile-subtitle">Supported Courses</h4>
+                    <div id="preview-courses"></div>
+                </div>
+            </section>
+
+            <!-- Right: Manage Profile -->
+            <section class="panel tutor-manage-panel">
+                <h3>Manage Tutor Profile</h3>
+
+                <!-- Avatar Upload -->
+                <div class="form-group">
+                    <label>Display Photo</label>
+                    <div class="avatar-upload-area">
+                        <div class="avatar-preview">
+                            <img id="avatar-preview" src="/static/images/perfect_cell.jpg" alt="avatar preview">
+                        </div>
+                        <div class="avatar-controls">
+                            <input type="file" id="avatar-input" accept="image/*" style="display:none;">
+                            <button type="button" class="btn small primary"
+                                onclick="document.getElementById('avatar-input').click()">Upload Photo</button>
+                            <button type="button" id="avatar-clear" class="btn ghost small">Clear</button>
+                        </div>
+                    </div>
+                    <small class="muted">Max size: 2MB. JPG/PNG only.</small>
+                </div>
+
+                <!-- Bio -->
+                <div class="form-group">
+                    <label for="bio-input">Bio <span class="char-count" id="bio-count">0/500</span></label>
+                    <textarea id="bio-input" rows="5" maxlength="500"
+                        placeholder="Tell students about yourself, your teaching style, and experience..."></textarea>
+                </div>
+
+                <!-- Teaching Modes -->
+                <div class="form-group">
+                    <label>Teaching Modes</label>
+                    <div class="toggle-modes">
+                        <button type="button" class="mode-btn" data-mode="in-person">📍 In-person</button>
+                        <button type="button" class="mode-btn" data-mode="online">💻 Online</button>
+                    </div>
+                </div>
+
+                <!-- Languages -->
+                <div class="form-group">
+                    <label>Languages</label>
+                    <div class="chip-input-wrapper">
+                        <input type="text" id="language-input" placeholder="Add a language (press Enter)">
+                        <button type="button" class="btn small primary" onclick="addLanguage()">Add</button>
+                    </div>
+                    <div class="chip-list" id="languages-list"></div>
+                </div>
+
+                <!-- Skills -->
+                <div class="form-group">
+                    <label>Skills</label>
+                    <div class="chip-input-wrapper">
+                        <input type="text" id="skill-input" placeholder="Add a skill (press Enter)">
+                        <button type="button" class="btn small primary" onclick="addSkill()">Add</button>
+                    </div>
+                    <div class="chip-list" id="skills-list"></div>
+                </div>
+
+                <!-- Supported Courses -->
+                <div class="form-group">
+                    <label>Supported Courses</label>
+                    <div class="chip-input-wrapper">
+                        <input type="text" id="course-input" placeholder="Add a course (press Enter)">
+                        <button type="button" class="btn small primary" onclick="addCourse()">Add</button>
+                    </div>
+                    <div class="chip-list" id="courses-list"></div>
+                </div>
+
+                <!-- Actions -->
+                <div class="form-actions">
+                    <button type="button" class="btn primary" id="save-profile">💾 Save Profile</button>
+                    <button type="button" class="btn ghost" id="preview-card">👁️ Preview Public Card</button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container" style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between;">
+            <div>(c) 2025 HCMUT - Privacy - Terms</div>
+            <div>Support: <a href="mailto:support@hcmut.edu.vn">support@hcmut.edu.vn</a></div>
+        </div>
+    </footer>
+
+    <script src="/static/js/tutor_profile.js"></script>
+</body>
+
+</html>
