@@ -13,7 +13,8 @@ USERS_UPSTREAM = os.getenv("USERS_UPSTREAM", "http://localhost:4015")
 SESSIONS_UPSTREAM = os.getenv("SESSIONS_UPSTREAM", "http://localhost:4016")
 MESSAGES_UPSTREAM = os.getenv("MESSAGES_UPSTREAM", "http://localhost:4017")
 LIBRARY_UPSTREAM = os.getenv("LIBRARY_UPSTREAM", "http://localhost:4018")
-TUTORS_UPSTREAM = os.getenv("TUTORS_UPSTREAM", "http://localhost:4019")
+ADMIN_UPSTREAM = os.getenv("ADMIN_UPSTREAM", "http://localhost:4019")
+TUTORS_UPSTREAM = os.getenv("TUTORS_UPSTREAM", "http://localhost:4099")
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret")
 ALGORITHM = "HS256"
 COOKIE_NAME = "access_token"
@@ -47,7 +48,19 @@ async def auth_guard(request: Request, call_next):
         return JSONResponse(status_code=401, content={"error": "unauthorized"})
 
     try:
-        request.state.user = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
+        #request.state.user = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
+        request.state.user = payload
+        
+        # PHÂN QUYỀN ADMIN - QUAN TRỌNG
+        user_role = payload.get("role")
+        
+        # Nếu truy cập admin routes mà không phải admin
+        if path.startswith("/admin/api/") and user_role != "ADMIN":
+            return JSONResponse(
+                status_code=403, 
+                content={"error": "forbidden", "message": "Admin access required"}
+            )
     except jwt.InvalidTokenError:
         return JSONResponse(status_code=401, content={"error": "unauthorized"})
 
@@ -168,6 +181,21 @@ async def tutors_proxy(path: str, request: Request):
 @app.api_route("/tutors", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
 async def tutors_root(request: Request):
     return await proxy_request(TUTORS_UPSTREAM, "", request)
+
+# Admin API routes - chỉ admin mới được truy cập
+@app.api_route("/admin/api/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+async def admin_api_proxy(path: str, request: Request):
+    return await proxy_request(ADMIN_UPSTREAM, f"api/{path}", request)
+
+# Public ingest for non-admin (still requires auth via middleware)
+@app.api_route("/admin/ingest/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+async def admin_ingest_proxy(path: str, request: Request):
+    return await proxy_request(ADMIN_UPSTREAM, f"api/{path}", request)
+
+# Admin static files - công khai
+@app.api_route("/admin/static/{path:path}", methods=["GET"])
+async def admin_static_proxy(path: str, request: Request):
+    return await proxy_request(ADMIN_UPSTREAM, f"static/{path}", request)
 
 
 if __name__ == "__main__":

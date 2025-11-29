@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>BKTutor Admin</title>
+  <link rel="stylesheet" href="static/css/style.css" />
+</head>
+<body>
+  <header class="top-bar">
+    <h1>BKTutor – Admin Console</h1>
+  </header>
+
+  <nav class="admin-nav">
+    <button data-screen="users" class="nav-btn active">User Roles & Access</button>
+    <button data-screen="matching" class="nav-btn">Matching Process</button>
+    <button data-screen="policies" class="nav-btn">Program Policies</button>
+  </nav>
+
+  <main id="screen-container">
+    <!-- JS will inject the current screen here -->
+  </main>
+
+  <!-- Modal (global) -->
+  <div id="modal" class="modal" aria-hidden="true" hidden>
+    <div class="modal-backdrop" data-action="close-modal"></div>
+    <div class="modal-panel" role="dialog" aria-modal="true">
+      <header class="modal-header">
+        <h3 id="modal-title">Title</h3>
+        <button class="link-button" data-action="close-modal">Close</button>
+      </header>
+      <div id="modal-body" class="modal-body"></div>
+      <footer class="modal-footer">
+        <button class="btn ghost" data-action="close-modal">Close</button>
+      </footer>
+    </div>
+  </div>
+
+  <script src="static/js/admin.js"></script>
+</body>
+</html>

@@ -34,7 +34,7 @@ kill_port 4016
 kill_port 4017
 kill_port 4018
 kill_port 4019
-
+kill_port 4099
 
 start_service() {
   local dir="$1"
@@ -54,6 +54,7 @@ start_service "services/users" 4015 "users"
 start_service "services/sessions" 4016 "sessions"
 start_service "services/messages" 4017 "messages"
 start_service "services/library" 4018 "library"
-start_service "services/tutors" 4019 "tutors"
+start_service "services/admin" 4019 "admin"
+start_service "services/tutors" 4099 "tutors"
 
 echo "[run] done. Logs in $LOGDIR (e.g., tail -f logs/api-gateway.log)"
