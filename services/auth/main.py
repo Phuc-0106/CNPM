@@ -38,9 +38,9 @@ USERS: Dict[str, Dict[str, Optional[str]]] = {
         "email": "tutor@hcmut.edu.vn",
         "password": "tutor123",
         "role": "TUTOR",
-        "name": "Henry Cavil",
+        "name": "Perfect Cell",
         "phone": "+94 999 888 777",
-        "major": "Artificial Intelligence",
+        "major": "Antagonist",
     }
 }
 

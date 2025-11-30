@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BKTutor | Sessions</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/tutor_manage_session.css">
+</head>
+
+<body>
+    <header class="nav">
+        <div class="container nav-inner">
+            <a class="nav-brand" href="/html/tutor_management_page.html" aria-label="tutor Management Page">
+                <img src="/static/images/hcmut.svg" alt="BKTutor">
+                <span>BKTutor</span>
+            </a>
+            <nav class="nav-links">
+                <a href="/html/tutor_profile.html">Profile</a>
+                <a href="/html/tutor_management_page.html" class="active">Manage</a>
+                <a href="/html/tutor_manage_session.html">Sessions</a>
+            </nav>
+            <div class="spacer"></div>
+            <button id="logoutBtn" class="btn primary" type="button">Log out</button>
+        </div>
+    </header>
+
+    <div id="alertBox" class="alert"></div>
+
+    <main>
+        <!-- Session List (Left Pane) -->
+        <aside class="session-list">
+            <div class="session-tabs">
+                <button class="session-tab active" data-tab="all">
+                    All
+                    <span class="count">5</span>
+                </button>
+                <button class="session-tab" data-tab="active">
+                    Active
+                    <span class="count">1</span>
+                </button>
+                <button class="session-tab" data-tab="upcoming">
+                    Upcoming
+                    <span class="count">2</span>
+                </button>
+                <button class="session-tab" data-tab="past">
+                    Past
+                    <span class="count">2</span>
+                </button>
+            </div>
+
+            <div class="sessions-scroll" id="sessionsContainer">
+                <!-- Sessions will be rendered here -->
+            </div>
+        </aside>
+
+        <!-- Session Details (Right Pane) -->
+        <section class="details-pane" id="detailsPane">
+            <div class="empty-state">
+                <div class="empty-icon">📅</div>
+                <div class="empty-text">Select a session to view details</div>
+                <div class="empty-subtext">Choose from the list on the left</div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Attendance Modal -->
+    <div id="attendanceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">📋 Mark Attendance</div>
+            <div class="attendance-list" id="attendanceList">
+                <!-- Attendance items will be rendered here -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn secondary" id="cancelAttendanceBtn">Cancel</button>
+                <button class="btn success" id="saveAttendanceBtn">💾 Save Attendance</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extend Session Modal -->
+    <div id="extendModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">⏰ Extend Session</div>
+            <p style="margin-bottom: 20px; color: #64748b;">How much time would you like to add?</p>
+            <div style="display: grid; gap: 12px;">
+                <button class="btn primary" onclick="confirmExtend(15)" style="justify-content: start; padding: 16px;">+
+                    15 minutes</button>
+                <button class="btn primary" onclick="confirmExtend(30)" style="justify-content: start; padding: 16px;">+
+                    30 minutes</button>
+                <button class="btn primary" onclick="confirmExtend(60)" style="justify-content: start; padding: 16px;">+
+                    60 minutes</button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn secondary" id="cancelExtendBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Mode Modal -->
+    <div id="changeModeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"> Change Session Mode</div>
+            <div id="changeModeContent">
+                <!-- Content will be dynamically generated -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn secondary" id="cancelChangeModeBtn">Cancel</button>
+                <button class="btn primary" id="confirmChangeModeBtn">✓ Confirm Change</button>
+            </div>
+        </div>
+    </div>
+    <footer class="footer">
+        <div class="container" style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between;">
+            <div>(c) 2025 HCMUT - Privacy - Terms</div>
+            <div>Support: <a href="mailto:support@hcmut.edu.vn">support@hcmut.edu.vn</a></div>
+        </div>
+    </footer>
+    <script src="/static/js/tutor_manage_session.js"></script>
+</body>
+
+</html>

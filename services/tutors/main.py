@@ -1,22 +1,23 @@
-import base64
 import os
+import base64
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
-
+from typing import Dict, List, Optional, Any
+import httpx
 import jwt
-from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret")
 ALGORITHM = "HS256"
 COOKIE_NAME = "access_token"
+SESSIONS_UPSTREAM = os.getenv("SESSIONS_UPSTREAM", "http://localhost:4016")
 
-app = FastAPI(title="Tutors service", version="1.0.0")
+app = FastAPI(title="Tutors service", version="2.0.0")
 
 origins = os.getenv(
     "CORS_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173,http://localhost,http://127.0.0.1,http://192.168.56.1:5173,http://172.20.95.15:5173,http://192.168.118.1:5173",
+    "http://localhost:5173,http://127.0.0.1:5173,http://localhost,http://127.0.0.1",
 ).split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -27,6 +28,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# ==================== PYDANTIC MODELS ====================
 
 class UpdateProfile(BaseModel):
     fullName: Optional[str] = None
@@ -39,11 +42,17 @@ class UpdateProfile(BaseModel):
     teachingModes: Optional[List[str]] = None
 
 
-class SessionAction(BaseModel):
+class BookingCreate(BaseModel):
     sessionId: str
-    action: str  # "accept", "reject", "cancel", "complete"
+    slotId: Optional[str] = None
+    message: Optional[str] = None
+
+
+class BookingCancel(BaseModel):
     reason: Optional[str] = None
 
+
+# ==================== HELPER FUNCTIONS ====================
 
 def decode_token(request: Request) -> Dict:
     token = request.cookies.get(COOKIE_NAME)
@@ -57,10 +66,20 @@ def decode_token(request: Request) -> Dict:
 
 def require_tutor(request: Request) -> Dict:
     payload = decode_token(request)
-    role = payload.get("role")
-    if role != "TUTOR":
-        raise HTTPException(status_code=403, detail="forbidden")
+    if payload.get("role") != "TUTOR":
+        raise HTTPException(status_code=403, detail="tutor access required")
     return payload
+
+
+def require_student(request: Request) -> Dict:
+    payload = decode_token(request)
+    if payload.get("role") != "STUDENT":
+        raise HTTPException(status_code=403, detail="student access required")
+    return payload
+
+
+def require_auth(request: Request) -> Dict:
+    return decode_token(request)
 
 
 def format_phone(value: str) -> str:
@@ -85,15 +104,16 @@ def iso(days_from_now: int, hour: int = 9) -> str:
     ).replace(hour=hour, minute=0, second=0, microsecond=0).isoformat() + "Z"
 
 
-# In-memory tutor data
-TUTORS: Dict[str, Dict[str, object]] = {
+# ==================== IN-MEMORY DATA ====================
+
+TUTORS: Dict[str, Dict[str, Any]] = {
     "tut-001": {
         "me": {
             "id": "tut-001",
             "fullName": "Perfect Cell",
             "email": "tutor@hcmut.edu.vn",
             "tutorId": "2350000",
-            "major": "Antagonist",
+            "major": "Computer Science",
             "phone": "+84 999 888 777",
             "avatarUrl": None,
             "bio": "Passionate about teaching AI and Machine Learning.",
@@ -108,122 +128,50 @@ TUTORS: Dict[str, Dict[str, object]] = {
             "hoursTeaching": 120,
             "avgRating": 4.8,
         },
-        # Sessions for management page
-        "pendingRequests": [
-            {
-                "id": "req-1",
-                "studentId": "stu-001",
-                "studentName": "Alex Student",
-                "studentEmail": "student@hcmut.edu.vn",
-                "courseCode": "CO3005",
-                "courseTitle": "Software Engineering",
-                "requestedAt": iso(-2, 10),
-                "preferredMode": "Online",
-                "preferredDay": "MON",
-                "preferredTime": "09:00-11:00",
-                "message": "I need help with design patterns.",
-                "status": "PENDING",
-            },
-            {
-                "id": "req-2",
-                "studentId": "stu-002",
-                "studentName": "Jane Doe",
-                "studentEmail": "jane@hcmut.edu.vn",
-                "courseCode": "CO1005",
-                "courseTitle": "Introduction to Computing",
-                "requestedAt": iso(-1, 14),
-                "preferredMode": "On campus",
-                "preferredDay": "WED",
-                "preferredTime": "14:00-16:00",
-                "message": "Need tutoring for upcoming exam.",
-                "status": "PENDING",
-            },
-        ],
-        "upcomingSessions": [
-            {
-                "id": "sess-t1",
-                "studentId": "stu-003",
-                "studentName": "John Smith",
-                "studentEmail": "john@hcmut.edu.vn",
-                "courseCode": "CO2013",
-                "courseTitle": "Operating Systems",
-                "scheduledAt": iso(1, 9),
-                "mode": "Online",
-                "dayOfWeek": "TUE",
-                "start": "09:00",
-                "end": "11:00",
-                "status": "CONFIRMED",
-            },
-            {
-                "id": "sess-t2",
-                "studentId": "stu-001",
-                "studentName": "Alex Student",
-                "studentEmail": "student@hcmut.edu.vn",
-                "courseCode": "CO3005",
-                "courseTitle": "Software Engineering",
-                "scheduledAt": iso(3, 14),
-                "mode": "On campus",
-                "dayOfWeek": "THU",
-                "start": "14:00",
-                "end": "16:00",
-                "status": "CONFIRMED",
-            },
-        ],
-        "completedSessions": [
-            {
-                "id": "comp-1",
-                "studentId": "stu-001",
-                "studentName": "Alex Student",
-                "courseCode": "CO3005",
-                "courseTitle": "Software Engineering Workshop",
-                "completedAt": iso(-7, 11),
-                "mode": "On campus",
-                "rating": 4.9,
-                "feedback": "Great session! Very helpful.",
-            },
-            {
-                "id": "comp-2",
-                "studentId": "stu-002",
-                "studentName": "Jane Doe",
-                "courseCode": "CO1005",
-                "courseTitle": "Intro to Computing Lab",
-                "completedAt": iso(-3, 15),
-                "mode": "Online",
-                "rating": 4.7,
-                "feedback": "Explained concepts clearly.",
-            },
-        ],
-        "students": [
-            {
-                "id": "stu-001",
-                "name": "Alex Student",
-                "email": "student@hcmut.edu.vn",
-                "enrolledCourses": ["CO3005", "CO2013"],
-                "sessionsCompleted": 5,
-                "lastSession": iso(-7, 11),
-            },
-            {
-                "id": "stu-002",
-                "name": "Jane Doe",
-                "email": "jane@hcmut.edu.vn",
-                "enrolledCourses": ["CO1005"],
-                "sessionsCompleted": 3,
-                "lastSession": iso(-3, 15),
-            },
-            {
-                "id": "stu-003",
-                "name": "John Smith",
-                "email": "john@hcmut.edu.vn",
-                "enrolledCourses": ["CO2013", "CO3083"],
-                "sessionsCompleted": 8,
-                "lastSession": iso(-1, 10),
-            },
-        ],
-    }
+    },
+}
+
+# Bookings storage
+BOOKINGS: Dict[str, Dict[str, Any]] = {
+    "book-001": {
+        "id": "book-001",
+        "sessionId": "sess-001",
+        "studentId": "stu-001",
+        "studentName": "Alex Student",
+        "studentEmail": "student@hcmut.edu.vn",
+        "slotId": "slot-001",
+        "status": "confirmed",  # pending | confirmed | cancelled | completed
+        "message": "Looking forward to learning!",
+        "createdAt": iso(-5, 10),
+        "confirmedAt": iso(-4, 14),
+    },
+    "book-002": {
+        "id": "book-002",
+        "sessionId": "sess-001",
+        "studentId": "stu-002",
+        "studentName": "Jane Doe",
+        "studentEmail": "jane@hcmut.edu.vn",
+        "slotId": "slot-002",
+        "status": "confirmed",
+        "message": "Need help with design patterns.",
+        "createdAt": iso(-3, 9),
+        "confirmedAt": iso(-2, 11),
+    },
+    "book-003": {
+        "id": "book-003",
+        "sessionId": "sess-002",
+        "studentId": "stu-003",
+        "studentName": "John Smith",
+        "studentEmail": "john@hcmut.edu.vn",
+        "slotId": "slot-003",
+        "status": "pending",
+        "message": "Want to learn OS concepts.",
+        "createdAt": iso(-1, 15),
+    },
 }
 
 
-def ensure_tutor(tutor_id: str) -> Dict[str, object]:
+def ensure_tutor(tutor_id: str) -> Dict[str, Any]:
     if tutor_id not in TUTORS:
         TUTORS[tutor_id] = {
             "me": {
@@ -241,13 +189,11 @@ def ensure_tutor(tutor_id: str) -> Dict[str, object]:
                 "teachingModes": [],
             },
             "stats": {"totalSessions": 0, "totalStudents": 0, "hoursTeaching": 0, "avgRating": 0},
-            "pendingRequests": [],
-            "upcomingSessions": [],
-            "completedSessions": [],
-            "students": [],
         }
     return TUTORS[tutor_id]
 
+
+# ==================== HEALTH CHECK ====================
 
 @app.get("/health")
 async def health():
@@ -262,11 +208,7 @@ async def get_profile(request: Request):
     tutor_id = payload.get("sub")
     print(f"[tutors] GET /profile for tutor_id={tutor_id}")
     data = ensure_tutor(tutor_id)
-    return {
-        "ok": True,
-        "tutor": data["me"],
-        "stats": data["stats"],
-    }
+    return {"ok": True, "tutor": data["me"], "stats": data["stats"]}
 
 
 @app.put("/profile")
@@ -300,15 +242,16 @@ async def update_profile(body: UpdateProfile, request: Request):
 @app.post("/profile/avatar")
 async def update_avatar(request: Request, file: UploadFile = File(None)):
     payload = require_tutor(request)
-    if not file:
-        raise HTTPException(status_code=400, detail="file required")
     tutor_id = payload.get("sub")
     print(f"[tutors] POST /profile/avatar for tutor_id={tutor_id}")
     data = ensure_tutor(tutor_id)
-    content = await file.read()
-    encoded = base64.b64encode(content).decode("ascii")
-    mime = file.content_type or "image/png"
-    data["me"]["avatarUrl"] = f"data:{mime};base64,{encoded}"
+
+    if file:
+        contents = await file.read()
+        b64 = base64.b64encode(contents).decode("utf-8")
+        mime = file.content_type or "image/png"
+        data["me"]["avatarUrl"] = f"data:{mime};base64,{b64}"
+
     return {"ok": True, "avatarUrl": data["me"]["avatarUrl"]}
 
 
@@ -322,477 +265,251 @@ async def delete_avatar(request: Request):
     return {"ok": True}
 
 
-# ==================== MANAGEMENT ENDPOINTS ====================
+# ==================== BOOKING ENDPOINTS (for Students) ====================
 
-@app.get("/dashboard")
-async def get_dashboard(request: Request):
-    """Main dashboard data for tutor management page"""
-    payload = require_tutor(request)
-    tutor_id = payload.get("sub")
-    print(f"[tutors] GET /dashboard for tutor_id={tutor_id}")
-    data = ensure_tutor(tutor_id)
-    return {
-        "ok": True,
-        "tutor": data["me"],
-        "stats": data["stats"],
-        "pendingRequests": data.get("pendingRequests", []),
-        "upcomingSessions": data.get("upcomingSessions", []),
-        "completedSessions": data.get("completedSessions", []),
-        "students": data.get("students", []),
+@app.post("/bookings")
+async def create_booking(body: BookingCreate, request: Request):
+    """POST /tutors/bookings - Student creates a booking"""
+    payload = require_student(request)
+    student_id = payload.get("sub")
+    print(f"[tutors] POST /bookings for student_id={student_id}, session={body.sessionId}")
+    
+    # Check if already booked
+    existing = next(
+        (b for b in BOOKINGS.values() 
+         if b["studentId"] == student_id 
+         and b["sessionId"] == body.sessionId 
+         and b["status"] not in ["cancelled"]),
+        None
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="already booked this session")
+    
+    # Call Sessions service to check capacity and enroll
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            # Check session exists and has capacity
+            session_resp = await client.get(
+                f"{SESSIONS_UPSTREAM}/internal/{body.sessionId}"
+            )
+            if session_resp.status_code == 404:
+                raise HTTPException(status_code=404, detail="session not found")
+            
+            session_data = session_resp.json().get("session", {})
+            if session_data.get("enrolled", 0) >= session_data.get("capacity", 0):
+                raise HTTPException(status_code=400, detail="session is full")
+            
+            # Enroll the student
+            enroll_resp = await client.post(
+                f"{SESSIONS_UPSTREAM}/internal/enroll/{body.sessionId}"
+            )
+            if not enroll_resp.is_success:
+                raise HTTPException(status_code=400, detail="failed to enroll")
+                
+    except httpx.RequestError as e:
+        print(f"[tutors] Sessions service error: {e}")
+        raise HTTPException(status_code=503, detail="sessions service unavailable")
+    
+    # Create booking
+    booking_id = f"book-{len(BOOKINGS) + 1:03d}-{datetime.utcnow().timestamp():.0f}"
+    
+    new_booking = {
+        "id": booking_id,
+        "sessionId": body.sessionId,
+        "studentId": student_id,
+        "studentName": payload.get("name", "Student"),
+        "studentEmail": payload.get("email", f"{student_id}@hcmut.edu.vn"),
+        "slotId": body.slotId,
+        "status": "pending",
+        "message": body.message or "",
+        "createdAt": datetime.utcnow().isoformat() + "Z",
     }
+    
+    BOOKINGS[booking_id] = new_booking
+    print(f"[tutors] Created booking {booking_id}")
+    
+    return {"ok": True, "booking": new_booking}
 
 
-@app.get("/requests")
-async def get_pending_requests(request: Request):
-    """Get pending session requests"""
+@app.get("/bookings")
+async def get_student_bookings(request: Request):
+    """GET /tutors/bookings - Student gets their bookings"""
+    payload = require_student(request)
+    student_id = payload.get("sub")
+    print(f"[tutors] GET /bookings for student_id={student_id}")
+    
+    student_bookings = [
+        b for b in BOOKINGS.values() 
+        if b["studentId"] == student_id
+    ]
+    
+    # Sort by createdAt descending
+    student_bookings.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
+    
+    return {"ok": True, "bookings": student_bookings}
+
+
+@app.get("/bookings/{booking_id}")
+async def get_booking_detail(booking_id: str, request: Request):
+    """GET /tutors/bookings/{id} - Get booking details"""
+    payload = require_auth(request)
+    user_id = payload.get("sub")
+    role = payload.get("role")
+    
+    booking = BOOKINGS.get(booking_id)
+    if not booking:
+        raise HTTPException(status_code=404, detail="booking not found")
+    
+    # Students can only see their own bookings
+    if role == "STUDENT" and booking["studentId"] != user_id:
+        raise HTTPException(status_code=403, detail="access denied")
+    
+    return {"ok": True, "booking": booking}
+
+
+@app.post("/bookings/{booking_id}/cancel")
+async def cancel_booking(booking_id: str, body: BookingCancel, request: Request):
+    """POST /tutors/bookings/{id}/cancel - Student cancels booking"""
+    payload = require_student(request)
+    student_id = payload.get("sub")
+    print(f"[tutors] POST /bookings/{booking_id}/cancel for student_id={student_id}")
+    
+    booking = BOOKINGS.get(booking_id)
+    if not booking:
+        raise HTTPException(status_code=404, detail="booking not found")
+    
+    if booking["studentId"] != student_id:
+        raise HTTPException(status_code=403, detail="access denied")
+    
+    if booking["status"] in ["cancelled", "completed"]:
+        raise HTTPException(status_code=400, detail="cannot cancel this booking")
+    
+    # Call sessions service to unenroll
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            await client.post(
+                f"{SESSIONS_UPSTREAM}/internal/unenroll/{booking['sessionId']}"
+            )
+    except httpx.RequestError as e:
+        print(f"[tutors] Sessions service error: {e}")
+    
+    booking["status"] = "cancelled"
+    booking["cancelledAt"] = datetime.utcnow().isoformat() + "Z"
+    booking["cancelReason"] = body.reason or ""
+    
+    return {"ok": True, "booking": booking}
+
+
+# ==================== TUTOR BOOKING MANAGEMENT ====================
+
+@app.get("/tutor/bookings")
+async def get_tutor_bookings(request: Request):
+    """GET /tutors/tutor/bookings - Tutor gets bookings for their sessions"""
     payload = require_tutor(request)
     tutor_id = payload.get("sub")
-    print(f"[tutors] GET /requests for tutor_id={tutor_id}")
-    data = ensure_tutor(tutor_id)
-    return {
-        "ok": True,
-        "requests": data.get("pendingRequests", []),
-    }
+    print(f"[tutors] GET /tutor/bookings for tutor_id={tutor_id}")
+    
+    # Get tutor's sessions first, then filter bookings
+    # For demo, return all bookings (in real app, filter by tutor's sessions)
+    all_bookings = list(BOOKINGS.values())
+    all_bookings.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
+    
+    return {"ok": True, "bookings": all_bookings}
 
 
-@app.post("/requests/{request_id}/accept")
-async def accept_request(request_id: str, request: Request):
-    """Accept a pending session request"""
+@app.post("/tutor/bookings/{booking_id}/confirm")
+async def confirm_booking(booking_id: str, request: Request):
+    """POST /tutors/tutor/bookings/{id}/confirm - Tutor confirms booking"""
     payload = require_tutor(request)
     tutor_id = payload.get("sub")
-    print(f"[tutors] POST /requests/{request_id}/accept for tutor_id={tutor_id}")
-    data = ensure_tutor(tutor_id)
+    print(f"[tutors] POST /tutor/bookings/{booking_id}/confirm for tutor_id={tutor_id}")
     
-    pending = data.get("pendingRequests", [])
-    req = next((r for r in pending if r["id"] == request_id), None)
-    if not req:
-        raise HTTPException(status_code=404, detail="request not found")
+    booking = BOOKINGS.get(booking_id)
+    if not booking:
+        raise HTTPException(status_code=404, detail="booking not found")
     
-    # Move to upcoming sessions
-    new_session = {
-        "id": f"sess-{request_id}",
-        "studentId": req["studentId"],
-        "studentName": req["studentName"],
-        "studentEmail": req["studentEmail"],
-        "courseCode": req["courseCode"],
-        "courseTitle": req["courseTitle"],
-        "scheduledAt": iso(2, 9),
-        "mode": req["preferredMode"],
-        "dayOfWeek": req["preferredDay"],
-        "start": req["preferredTime"].split("-")[0] if "-" in req["preferredTime"] else "09:00",
-        "end": req["preferredTime"].split("-")[1] if "-" in req["preferredTime"] else "11:00",
-        "status": "CONFIRMED",
-    }
-    data.setdefault("upcomingSessions", []).append(new_session)
+    if booking["status"] != "pending":
+        raise HTTPException(status_code=400, detail="booking is not pending")
     
-    # Remove from pending
-    data["pendingRequests"] = [r for r in pending if r["id"] != request_id]
+    # Call Sessions service to mark the slot as booked
+    slot_id = booking.get("slotId")
+    if slot_id:
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.put(
+                    f"{SESSIONS_UPSTREAM}/internal/slots/{slot_id}/book",
+                    json={
+                        "tutorId": tutor_id,
+                        "studentId": booking["studentId"],
+                    }
+                )
+                if not resp.is_success:
+                    print(f"[tutors] Failed to book slot: {resp.text}")
+        except httpx.RequestError as e:
+            print(f"[tutors] Sessions service error: {e}")
     
-    return {"ok": True, "session": new_session}
+    booking["status"] = "confirmed"
+    booking["confirmedAt"] = datetime.utcnow().isoformat() + "Z"
+    booking["confirmedBy"] = tutor_id
+    
+    return {"ok": True, "booking": booking}
 
 
-@app.post("/requests/{request_id}/reject")
-async def reject_request(request_id: str, request: Request):
-    """Reject a pending session request"""
+@app.post("/tutor/bookings/{booking_id}/reject")
+async def reject_booking(booking_id: str, request: Request):
+    """POST /tutors/tutor/bookings/{id}/reject - Tutor rejects booking"""
     payload = require_tutor(request)
     tutor_id = payload.get("sub")
-    print(f"[tutors] POST /requests/{request_id}/reject for tutor_id={tutor_id}")
-    data = ensure_tutor(tutor_id)
+    print(f"[tutors] POST /tutor/bookings/{booking_id}/reject for tutor_id={tutor_id}")
     
-    pending = data.get("pendingRequests", [])
-    req = next((r for r in pending if r["id"] == request_id), None)
-    if not req:
-        raise HTTPException(status_code=404, detail="request not found")
+    booking = BOOKINGS.get(booking_id)
+    if not booking:
+        raise HTTPException(status_code=404, detail="booking not found")
     
-    # Remove from pending
-    data["pendingRequests"] = [r for r in pending if r["id"] != request_id]
+    if booking["status"] != "pending":
+        raise HTTPException(status_code=400, detail="booking is not pending")
     
-    return {"ok": True}
+    # If slot was tentatively reserved, release it
+    slot_id = booking.get("slotId")
+    if slot_id:
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                await client.put(
+                    f"{SESSIONS_UPSTREAM}/internal/slots/{slot_id}/unbook",
+                    json={"tutorId": tutor_id}
+                )
+        except httpx.RequestError as e:
+            print(f"[tutors] Sessions service error: {e}")
+    
+    booking["status"] = "cancelled"
+    booking["cancelledAt"] = datetime.utcnow().isoformat() + "Z"
+    booking["rejectedBy"] = tutor_id
+    
+    return {"ok": True, "booking": booking}
 
 
-@app.get("/sessions/upcoming")
-async def get_upcoming_sessions(request: Request):
-    """Get upcoming confirmed sessions"""
+@app.post("/tutor/bookings/{booking_id}/complete")
+async def complete_booking(booking_id: str, request: Request):
+    """POST /tutors/tutor/bookings/{id}/complete - Tutor marks booking complete"""
     payload = require_tutor(request)
     tutor_id = payload.get("sub")
-    print(f"[tutors] GET /sessions/upcoming for tutor_id={tutor_id}")
+    print(f"[tutors] POST /tutor/bookings/{booking_id}/complete for tutor_id={tutor_id}")
+    
+    booking = BOOKINGS.get(booking_id)
+    if not booking:
+        raise HTTPException(status_code=404, detail="booking not found")
+    
+    if booking["status"] != "confirmed":
+        raise HTTPException(status_code=400, detail="booking must be confirmed first")
+    
+    booking["status"] = "completed"
+    booking["completedAt"] = datetime.utcnow().isoformat() + "Z"
+    
+    # Update tutor stats
     data = ensure_tutor(tutor_id)
-    return {
-        "ok": True,
-        "sessions": data.get("upcomingSessions", []),
-    }
-
-
-@app.get("/sessions/completed")
-async def get_completed_sessions(request: Request):
-    """Get completed sessions history"""
-    payload = require_tutor(request)
-    tutor_id = payload.get("sub")
-    print(f"[tutors] GET /sessions/completed for tutor_id={tutor_id}")
-    data = ensure_tutor(tutor_id)
-    return {
-        "ok": True,
-        "sessions": data.get("completedSessions", []),
-    }
-
-
-@app.post("/sessions/{session_id}/cancel")
-async def cancel_session(session_id: str, request: Request):
-    """Cancel an upcoming session"""
-    payload = require_tutor(request)
-    tutor_id = payload.get("sub")
-    print(f"[tutors] POST /sessions/{session_id}/cancel for tutor_id={tutor_id}")
-    data = ensure_tutor(tutor_id)
-    
-    upcoming = data.get("upcomingSessions", [])
-    session = next((s for s in upcoming if s["id"] == session_id), None)
-    if not session:
-        raise HTTPException(status_code=404, detail="session not found")
-    
-    # Remove from upcoming
-    data["upcomingSessions"] = [s for s in upcoming if s["id"] != session_id]
-    
-    return {"ok": True}
-
-
-@app.post("/sessions/{session_id}/complete")
-async def complete_session(session_id: str, request: Request):
-    """Mark a session as completed"""
-    payload = require_tutor(request)
-    tutor_id = payload.get("sub")
-    print(f"[tutors] POST /sessions/{session_id}/complete for tutor_id={tutor_id}")
-    data = ensure_tutor(tutor_id)
-    
-    upcoming = data.get("upcomingSessions", [])
-    session = next((s for s in upcoming if s["id"] == session_id), None)
-    if not session:
-        raise HTTPException(status_code=404, detail="session not found")
-    
-    # Move to completed
-    completed_session = {
-        "id": session["id"],
-        "studentId": session["studentId"],
-        "studentName": session["studentName"],
-        "courseCode": session["courseCode"],
-        "courseTitle": session["courseTitle"],
-        "completedAt": datetime.utcnow().isoformat() + "Z",
-        "mode": session["mode"],
-        "rating": None,
-        "feedback": None,
-    }
-    data.setdefault("completedSessions", []).insert(0, completed_session)
-    
-    # Remove from upcoming
-    data["upcomingSessions"] = [s for s in upcoming if s["id"] != session_id]
-    
-    # Update stats
     data["stats"]["totalSessions"] = data["stats"].get("totalSessions", 0) + 1
-    data["stats"]["hoursTeaching"] = data["stats"].get("hoursTeaching", 0) + 2
     
-    return {"ok": True, "session": completed_session}
-
-
-@app.get("/students")
-async def get_students(request: Request):
-    """Get list of students tutored"""
-    payload = require_tutor(request)
-    tutor_id = payload.get("sub")
-    print(f"[tutors] GET /students for tutor_id={tutor_id}")
-    data = ensure_tutor(tutor_id)
-    return {
-        "ok": True,
-        "students": data.get("students", []),
-    }
-
-
-@app.get("/students/{student_id}")
-async def get_student_detail(student_id: str, request: Request):
-    """Get details of a specific student"""
-    payload = require_tutor(request)
-    tutor_id = payload.get("sub")
-    print(f"[tutors] GET /students/{student_id} for tutor_id={tutor_id}")
-    data = ensure_tutor(tutor_id)
-    
-    student = next((s for s in data.get("students", []) if s["id"] == student_id), None)
-    if not student:
-        raise HTTPException(status_code=404, detail="student not found")
-    
-    # Get sessions with this student
-    completed = [s for s in data.get("completedSessions", []) if s.get("studentId") == student_id]
-    upcoming = [s for s in data.get("upcomingSessions", []) if s.get("studentId") == student_id]
-    
-    return {
-        "ok": True,
-        "student": student,
-        "completedSessions": completed,
-        "upcomingSessions": upcoming,
-    }
-
-
-# ==================== AVAILABILITY MANAGEMENT ENDPOINTS ====================
-
-@app.get("/availability")
-async def get_availability(request: Request):
-    """Get tutor's availability slots for the current week"""
-    payload = require_tutor(request)
-    tutor_id = payload.get("sub")
-    print(f"[tutors] GET /availability for tutor_id={tutor_id}")
-    data = ensure_tutor(tutor_id)
-    
-    # Initialize availability if not exists
-    if "availability" not in data:
-        data["availability"] = {
-            "slots": [
-                {
-                    "id": "slot-1",
-                    "day": "Monday",
-                    "date": None,
-                    "startTime": "09:00",
-                    "duration": 60,
-                    "mode": "online",
-                    "location": None,
-                    "capacity": 1,
-                    "leadTime": 24,
-                    "cancelWindow": 12,
-                    "status": "published",
-                    "recurrence": "weekly",
-                    "booked": False,
-                },
-                {
-                    "id": "slot-2",
-                    "day": "Wednesday",
-                    "date": None,
-                    "startTime": "14:00",
-                    "duration": 60,
-                    "mode": "offline",
-                    "location": "Room B1-101",
-                    "capacity": 2,
-                    "leadTime": 24,
-                    "cancelWindow": 12,
-                    "status": "unpublished",
-                    "recurrence": "weekly",
-                    "booked": False,
-                },
-                {
-                    "id": "slot-3",
-                    "day": "Friday",
-                    "date": None,
-                    "startTime": "10:00",
-                    "duration": 60,
-                    "mode": "online",
-                    "location": None,
-                    "capacity": 1,
-                    "leadTime": 48,
-                    "cancelWindow": 24,
-                    "status": "published",
-                    "recurrence": "weekly",
-                    "booked": False,
-                },
-            ],
-            "exceptions": [],
-            "policy": {
-                "allowedHoursStart": 7,
-                "allowedHoursEnd": 22,
-                "maxSlotsPerDay": 8,
-                "maxSlotsPerWeek": 30,
-            },
-        }
-    
-    return {
-        "ok": True,
-        "slots": data["availability"]["slots"],
-        "exceptions": data["availability"]["exceptions"],
-        "policy": data["availability"]["policy"],
-        "weekUsage": len([s for s in data["availability"]["slots"] if s["status"] == "published"]),
-    }
-
-
-@app.post("/availability/slots")
-async def add_slot(request: Request):
-    """Add a new availability slot"""
-    payload = require_tutor(request)
-    tutor_id = payload.get("sub")
-    print(f"[tutors] POST /availability/slots for tutor_id={tutor_id}")
-    data = ensure_tutor(tutor_id)
-    
-    body = await request.json()
-    
-    if "availability" not in data:
-        data["availability"] = {"slots": [], "exceptions": [], "policy": {}}
-    
-    new_slot = {
-        "id": f"slot-{len(data['availability']['slots']) + 1}-{datetime.utcnow().timestamp():.0f}",
-        "day": body.get("day"),
-        "date": body.get("date"),
-        "startTime": body.get("startTime"),
-        "duration": int(body.get("duration", 60)),
-        "mode": body.get("mode", "online"),
-        "location": body.get("location"),
-        "capacity": int(body.get("capacity", 1)),
-        "leadTime": int(body.get("leadTime", 24)),
-        "cancelWindow": int(body.get("cancelWindow", 12)),
-        "status": "unpublished",
-        "recurrence": body.get("recurrence", "once"),
-        "booked": False,
-    }
-    
-    data["availability"]["slots"].append(new_slot)
-    
-    return {"ok": True, "slot": new_slot}
-
-
-@app.put("/availability/slots/{slot_id}")
-async def update_slot(slot_id: str, request: Request):
-    """Update an availability slot"""
-    payload = require_tutor(request)
-    tutor_id = payload.get("sub")
-    print(f"[tutors] PUT /availability/slots/{slot_id} for tutor_id={tutor_id}")
-    data = ensure_tutor(tutor_id)
-    
-    if "availability" not in data:
-        raise HTTPException(status_code=404, detail="slot not found")
-    
-    slot = next((s for s in data["availability"]["slots"] if s["id"] == slot_id), None)
-    if not slot:
-        raise HTTPException(status_code=404, detail="slot not found")
-    
-    body = await request.json()
-    
-    for key in ["day", "date", "startTime", "duration", "mode", "location", "capacity", "leadTime", "cancelWindow", "recurrence"]:
-        if key in body:
-            slot[key] = body[key]
-    
-    return {"ok": True, "slot": slot}
-
-
-@app.delete("/availability/slots/{slot_id}")
-async def delete_slot(slot_id: str, request: Request):
-    """Delete an availability slot"""
-    payload = require_tutor(request)
-    tutor_id = payload.get("sub")
-    print(f"[tutors] DELETE /availability/slots/{slot_id} for tutor_id={tutor_id}")
-    data = ensure_tutor(tutor_id)
-    
-    if "availability" not in data:
-        raise HTTPException(status_code=404, detail="slot not found")
-    
-    slots = data["availability"]["slots"]
-    slot = next((s for s in slots if s["id"] == slot_id), None)
-    if not slot:
-        raise HTTPException(status_code=404, detail="slot not found")
-    
-    if slot.get("booked"):
-        raise HTTPException(status_code=400, detail="cannot delete booked slot")
-    
-    data["availability"]["slots"] = [s for s in slots if s["id"] != slot_id]
-    
-    return {"ok": True}
-
-
-@app.post("/availability/slots/{slot_id}/publish")
-async def publish_slot(slot_id: str, request: Request):
-    """Publish an availability slot"""
-    payload = require_tutor(request)
-    tutor_id = payload.get("sub")
-    print(f"[tutors] POST /availability/slots/{slot_id}/publish for tutor_id={tutor_id}")
-    data = ensure_tutor(tutor_id)
-    
-    if "availability" not in data:
-        raise HTTPException(status_code=404, detail="slot not found")
-    
-    slot = next((s for s in data["availability"]["slots"] if s["id"] == slot_id), None)
-    if not slot:
-        raise HTTPException(status_code=404, detail="slot not found")
-    
-    slot["status"] = "published"
-    
-    return {"ok": True, "slot": slot}
-
-
-@app.post("/availability/publish-all")
-async def publish_all_slots(request: Request):
-    """Publish all unpublished slots"""
-    payload = require_tutor(request)
-    tutor_id = payload.get("sub")
-    print(f"[tutors] POST /availability/publish-all for tutor_id={tutor_id}")
-    data = ensure_tutor(tutor_id)
-    
-    if "availability" not in data:
-        return {"ok": True, "count": 0}
-    
-    count = 0
-    for slot in data["availability"]["slots"]:
-        if slot["status"] == "unpublished":
-            slot["status"] = "published"
-            count += 1
-    
-    return {"ok": True, "count": count}
-
-
-@app.post("/availability/exceptions")
-async def add_exception(request: Request):
-    """Add a blackout date/exception"""
-    payload = require_tutor(request)
-    tutor_id = payload.get("sub")
-    print(f"[tutors] POST /availability/exceptions for tutor_id={tutor_id}")
-    data = ensure_tutor(tutor_id)
-    
-    body = await request.json()
-    
-    if "availability" not in data:
-        data["availability"] = {"slots": [], "exceptions": [], "policy": {}}
-    
-    new_exception = {
-        "id": f"exc-{len(data['availability']['exceptions']) + 1}-{datetime.utcnow().timestamp():.0f}",
-        "startDate": body.get("startDate"),
-        "endDate": body.get("endDate"),
-        "startTime": body.get("startTime"),
-        "endTime": body.get("endTime"),
-        "reason": body.get("reason", ""),
-    }
-    
-    data["availability"]["exceptions"].append(new_exception)
-    
-    return {"ok": True, "exception": new_exception}
-
-
-@app.delete("/availability/exceptions/{exception_id}")
-async def delete_exception(exception_id: str, request: Request):
-    """Delete an exception"""
-    payload = require_tutor(request)
-    tutor_id = payload.get("sub")
-    print(f"[tutors] DELETE /availability/exceptions/{exception_id} for tutor_id={tutor_id}")
-    data = ensure_tutor(tutor_id)
-    
-    if "availability" not in data:
-        raise HTTPException(status_code=404, detail="exception not found")
-    
-    exceptions = data["availability"]["exceptions"]
-    exc = next((e for e in exceptions if e["id"] == exception_id), None)
-    if not exc:
-        raise HTTPException(status_code=404, detail="exception not found")
-    
-    data["availability"]["exceptions"] = [e for e in exceptions if e["id"] != exception_id]
-    
-    return {"ok": True}
-
-
-@app.delete("/availability/bulk-delete-unpublished")
-async def bulk_delete_unpublished(request: Request):
-    """Delete all unpublished slots"""
-    payload = require_tutor(request)
-    tutor_id = payload.get("sub")
-    print(f"[tutors] DELETE /availability/bulk-delete-unpublished for tutor_id={tutor_id}")
-    data = ensure_tutor(tutor_id)
-    
-    if "availability" not in data:
-        return {"ok": True, "count": 0}
-    
-    before_count = len(data["availability"]["slots"])
-    data["availability"]["slots"] = [s for s in data["availability"]["slots"] if s["status"] != "unpublished"]
-    deleted_count = before_count - len(data["availability"]["slots"])
-    
-    return {"ok": True, "count": deleted_count}
+    return {"ok": True, "booking": booking}
 
 
 if __name__ == "__main__":
@@ -800,7 +517,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=int(os.getenv("PORT", "4019")),
+        port=int(os.getenv("PORT", "4099")),
         reload=False,
     )
 

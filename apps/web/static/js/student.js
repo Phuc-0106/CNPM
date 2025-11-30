@@ -32,6 +32,7 @@ const state = {
   activeConvId: null,
   activeConvTitle: "",
   messages: [],
+  availableSlots: [],
 };
 
 const els = {
@@ -67,6 +68,7 @@ const els = {
   sendMessage: document.querySelector("#send-message"),
   toggleGroups: document.querySelector("#toggle-groups"),
   toggleDirects: document.querySelector("#toggle-directs"),
+  availableSlots: document.querySelector("#available-slots"),
 };
 
 let openGroups = true;
@@ -302,41 +304,112 @@ function toggleCart(id) {
   renderCart();
 }
 
+// ==================== NEW: Fetch from Sessions Service ====================
+
 async function fetchCourses() {
   setLoadingCourses(true);
-  setCoursesError("");
-  els.coursesList.innerHTML = "";
-
   try {
-    const params = new URLSearchParams();
-    if (state.query.trim()) params.set("code", state.query.trim());
-    params.set("fromHour", String(state.availability[0]));
-    params.set("toHour", String(state.availability[1]));
-    if (!state.modes.Online) params.set("online", "false");
-    if (!state.modes["On campus"]) params.set("onCampus", "false");
-    if (state.selectedDays.length) params.set("days", state.selectedDays.join(","));
+    // Now fetches from Sessions Service via gateway
+    const res = await fetch(api("/sessions/browse"), { credentials: "include" });
 
-    const res = await fetch(api(`/sessions/browse?${params.toString()}`), {
-      credentials: "include",
-    });
     if (res.status === 401) {
       window.location.href = "/login.html";
       return;
     }
+
     if (!res.ok) {
-      setCoursesError("Unable to load sessions.");
+      setCoursesError("Failed to load sessions");
       return;
     }
-    const payload = await res.json();
-    state.courses = payload.sessions || payload.courses || [];
-    state.page = 1;
+
+    const data = await res.json();
+    // Map sessions to course format for compatibility
+    state.courses = (data.sessions || []).map((s) => ({
+      id: s.id,
+      code: s.courseCode,
+      title: s.courseTitle,
+      tutor: s.tutorName,
+      tutorId: s.tutorId,
+      mode: s.slots?.[0]?.mode === "online" ? "Online" : "On campus",
+      dayOfWeek: s.slots?.[0]?.day?.substring(0, 3).toUpperCase() || "MON",
+      start: s.slots?.[0]?.startTime || "09:00",
+      end: s.slots?.[0]?.endTime || "11:00",
+      rating: 4.5,
+      capacity: s.capacity,
+      enrolled: s.enrolled,
+      availableSlots: s.availableSlots,
+      slots: s.slots,
+    }));
+
     renderCourses();
   } catch (err) {
-    console.error(err);
-    setCoursesError("Network error.");
+    console.error("Fetch courses error:", err);
+    setCoursesError("Network error");
   } finally {
     setLoadingCourses(false);
   }
+}
+
+// ==================== NEW: Book Session via Tutors Service ====================
+
+async function bookSession(sessionId, slotId = null) {
+  try {
+    const res = await fetch(api("/bookings"), {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId,
+        slotId,
+        message: "",
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.detail || "Failed to book session");
+      return false;
+    }
+
+    alert("Session booked successfully!");
+    return true;
+  } catch (err) {
+    console.error("Book session error:", err);
+    alert("Failed to book session");
+    return false;
+  }
+}
+
+// ==================== UPDATE: Confirm Registration ====================
+
+async function confirmRegistration() {
+  if (!state.cart.length) {
+    alert("No sessions selected.");
+    return;
+  }
+
+  // Book each session via Tutors Service
+  let successCount = 0;
+  for (const sessionId of state.cart) {
+    const success = await bookSession(sessionId);
+    if (success) {
+      successCount++;
+      state.registered.add(sessionId);
+    }
+  }
+
+  if (successCount > 0) {
+    state.cart = [];
+    renderCart();
+    renderCourses();
+    alert(`Successfully booked ${successCount} session(s)`);
+  }
+}
+
+function refreshCourses() {
+  if (fetchCoursesHandle) clearTimeout(fetchCoursesHandle);
+  fetchCoursesHandle = setTimeout(fetchCourses, 250);
 }
 
 async function fetchProfileAndRegistered() {
@@ -540,28 +613,243 @@ function attachEvents() {
     }
   });
 
-  els.confirm?.addEventListener("click", () => {
-    if (!state.cart.length) {
-      alert("No sessions selected.");
+  els.confirm?.addEventListener("click", confirmRegistration);
+}
+
+// ==================== FETCH AVAILABLE SLOTS FROM SESSIONS SERVICE ====================
+
+async function fetchAvailableSlots() {
+  try {
+    // Students browse availability directly from Sessions Service
+    const res = await fetch(api("/sessions/browse/availability"), { credentials: "include" });
+
+    if (res.status === 401) {
+      window.location.href = "/login.html";
       return;
     }
-    fetch(api("/students/register"), {
+
+    if (!res.ok) {
+      console.error("Failed to load availability");
+      return;
+    }
+
+    const data = await res.json();
+    // data.slots contains all published, available slots from all tutors
+    state.availableSlots = data.slots || [];
+    renderAvailableSlots();
+  } catch (err) {
+    console.error("Fetch available slots error:", err);
+  }
+}
+
+function renderAvailableSlots() {
+  const container = document.querySelector("#available-slots");
+  if (!container) return;
+
+  if (!state.availableSlots.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📅</div>
+        <div class="empty-text">No available slots</div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = state.availableSlots
+    .map((slot) => `
+      <div class="slot-card" data-slot-id="${slot.id}" data-tutor-id="${slot.tutorId}">
+        <div class="slot-tutor">${slot.tutorName}</div>
+        <div class="slot-day">${slot.day}</div>
+        <div class="slot-time">${slot.startTime} - ${formatEndTime(slot.startTime, slot.duration)}</div>
+        <div class="slot-mode badge ${slot.mode}">${slot.mode}</div>
+        ${slot.location ? `<div class="slot-location">📍 ${slot.location}</div>` : ""}
+        <button class="btn small primary" onclick="bookSlot('${slot.id}', '${slot.tutorId}')">
+          Book This Slot
+        </button>
+      </div>
+    `)
+    .join("");
+}
+
+// ==================== BOOK A SLOT (creates booking request) ====================
+
+window.bookSlot = async function(slotId, tutorId) {
+  const message = prompt("Add a message for the tutor (optional):");
+  
+  try {
+    const res = await fetch(api("/bookings"), {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionIds: state.cart }),
-    })
-      .then((res) => res.json())
-      .then(() => {
-        alert("Sessions registered.");
-        state.cart.forEach((id) => state.registered.add(id));
-        state.cart = [];
-        renderCart();
-        renderCourses();
-      })
-      .catch(() => alert("Registration failed."));
-  });
+      body: JSON.stringify({
+        slotId,
+        tutorId,
+        message: message || "",
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.detail || "Failed to book slot");
+      return;
+    }
+
+    alert("Booking request sent! Wait for tutor confirmation.");
+    await fetchAvailableSlots(); // Refresh the list
+  } catch (err) {
+    console.error("Book slot error:", err);
+    alert("Failed to send booking request");
+  }
+};
+
+function formatEndTime(startTime, duration) {
+  const [h, m] = startTime.split(":").map(Number);
+  const totalMinutes = h * 60 + m + duration;
+  const endH = Math.floor(totalMinutes / 60);
+  const endM = totalMinutes % 60;
+  return `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
 }
+
+// ==================== AUTO-REFRESH FOR SESSIONS ====================
+let sessionPollInterval = null;
+const POLL_INTERVAL_MS = 10000; // 10 seconds
+
+// Fetch sessions from Sessions service
+async function fetchSessions() {
+  console.log("Fetching sessions from Sessions service...");
+  
+  try {
+    const res = await fetch(api("/sessions/browse"), { credentials: "include" });
+
+    if (res.status === 401) {
+      window.location.href = "/login.html";
+      return;
+    }
+
+    if (!res.ok) {
+      console.error("Failed to load sessions:", res.status);
+      return;
+    }
+
+    const data = await res.json();
+    console.log("Sessions data:", data);
+    
+    // Map sessions to courses format for existing rendering
+    const newCourses = (data.sessions || []).map(session => ({
+      id: session.id,
+      code: session.courseCode,
+      title: session.courseTitle,
+      tutor: session.tutorName,
+      tutorId: session.tutorId,
+      dayOfWeek: session.slots?.[0]?.day?.toUpperCase()?.slice(0, 3) || "MON",
+      start: session.slots?.[0]?.startTime || "09:00",
+      end: session.slots?.[0]?.endTime || "11:00",
+      mode: session.slots?.[0]?.mode === "online" ? "Online" : "On campus",
+      location: session.slots?.[0]?.location,
+      rating: 4.5,
+      capacity: session.capacity,
+      enrolled: session.enrolled,
+      availableSlots: session.availableSlots,
+      slots: session.slots,
+    }));
+
+    // Check if sessions changed
+    const oldCount = state.courses.length;
+    const newCount = newCourses.length;
+    
+    state.courses = newCourses;
+    console.log(`Loaded ${state.courses.length} sessions`);
+    
+    // Show notification if new sessions appeared
+    if (newCount > oldCount && oldCount > 0) {
+      showNotification(`${newCount - oldCount} new session(s) available!`);
+    }
+    
+    renderCourses();
+  } catch (err) {
+    console.error("Fetch sessions error:", err);
+  }
+}
+
+// Start polling for session updates
+function startSessionPolling() {
+  if (sessionPollInterval) {
+    clearInterval(sessionPollInterval);
+  }
+  console.log("Starting session polling every", POLL_INTERVAL_MS / 1000, "seconds");
+  sessionPollInterval = setInterval(() => {
+    console.log("Polling for session updates...");
+    fetchSessions();
+  }, POLL_INTERVAL_MS);
+}
+
+// Stop polling
+function stopSessionPolling() {
+  if (sessionPollInterval) {
+    clearInterval(sessionPollInterval);
+    sessionPollInterval = null;
+    console.log("Stopped session polling");
+  }
+}
+
+// Show notification toast
+function showNotification(message) {
+  // Create toast element if not exists
+  let toast = document.getElementById("session-toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "session-toast";
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4);
+      z-index: 9999;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+    `;
+    document.body.appendChild(toast);
+  }
+  
+  toast.textContent = message;
+  toast.style.transform = "translateY(0)";
+  toast.style.opacity = "1";
+  
+  setTimeout(() => {
+    toast.style.transform = "translateY(100px)";
+    toast.style.opacity = "0";
+  }, 4000);
+}
+
+// Manual refresh button handler
+window.refreshSessions = function() {
+  console.log("Manual refresh triggered");
+  showNotification("Refreshing sessions...");
+  fetchSessions();
+};
+
+// Stop polling when leaving page
+window.addEventListener("beforeunload", () => {
+  stopSessionPolling();
+});
+
+// Visibility change - pause polling when tab is hidden
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    stopSessionPolling();
+  } else {
+    fetchSessions(); // Immediate refresh when tab becomes visible
+    startSessionPolling();
+  }
+});
 
 (async function init() {
   renderDayChips();
@@ -572,4 +860,7 @@ function attachEvents() {
   fetchSidebar();
   refreshCourses();
   renderCart();
+  fetchAvailableSlots();
+  fetchSessions(); // Initial fetch
+  startSessionPolling(); // Start polling
 })();
