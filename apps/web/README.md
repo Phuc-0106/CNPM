@@ -20,3 +20,7 @@ npm run serve   # serves ./www on http://localhost:5173
 ## Demo login
 - Email: `student@hcmut.edu.vn`
 - Password: `demo123`
+- Email: `tutor@hcmut.edu.vn`
+- Password: `tutor123`
+- Email: `admin@hcmut.edu.vn`
+- Password: `admin123`

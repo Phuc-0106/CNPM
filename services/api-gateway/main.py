@@ -197,6 +197,17 @@ async def admin_ingest_proxy(path: str, request: Request):
 async def admin_static_proxy(path: str, request: Request):
     return await proxy_request(ADMIN_UPSTREAM, f"static/{path}", request)
 
+@app.api_route("/bookings", methods=["GET", "POST"])
+async def bookings_root(request: Request):
+    """Route /bookings to Tutors service"""
+    return await proxy_request(TUTORS_UPSTREAM, "bookings", request)
+
+
+@app.api_route("/bookings/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def bookings_proxy(path: str, request: Request):
+    """Route /bookings/* to Tutors service"""
+    return await proxy_request(TUTORS_UPSTREAM, f"bookings/{path}", request)
+
 
 if __name__ == "__main__":
     import uvicorn

@@ -38,9 +38,9 @@ USERS: Dict[str, Dict[str, Optional[str]]] = {
         "email": "tutor@hcmut.edu.vn",
         "password": "tutor123",
         "role": "TUTOR",
-        "name": "Henry Cavil",
+        "name": "Perfect Cell",
         "phone": "+94 999 888 777",
-        "major": "Artificial Intelligence",
+        "major": "Antagonist",
     }
 }
 
@@ -62,6 +62,8 @@ class UserResponse(BaseModel):
 def create_token(user: Dict[str, Optional[str]]) -> str:
     payload = {
         "sub": user["id"],
+        "email": user["email"],
+        "name": user["name"], 
         "role": user["role"],
         "exp": datetime.utcnow() + timedelta(hours=JWT_EXPIRY_HOURS),
     }
