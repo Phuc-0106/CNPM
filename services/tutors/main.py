@@ -77,6 +77,11 @@ def require_student(request: Request) -> Dict:
         raise HTTPException(status_code=403, detail="student access required")
     return payload
 
+def require_admin(request: Request) -> Dict:
+    payload = decode_token(request)
+    if payload.get("role") != "ADMIN":
+        raise HTTPException(status_code=403, detail="admin access required")
+    return payload
 
 def require_auth(request: Request) -> Dict:
     return decode_token(request)
@@ -113,9 +118,9 @@ TUTORS: Dict[str, Dict[str, Any]] = {
             "fullName": "Perfect Cell",
             "email": "tutor@hcmut.edu.vn",
             "tutorId": "2350000",
-            "major": "Computer Science",
+            "major": "Antagonist",
             "phone": "+84 999 888 777",
-            "avatarUrl": None,
+            "avatarUrl": "https://wallpapers.com/images/hd/perfect-cell-2048-x-2048-wallpaper-zop68g3bpadre4n0.jpg",
             "bio": "Passionate about teaching AI and Machine Learning.",
             "languages": ["English", "Vietnamese"],
             "skills": ["Programming", "Algorithms", "Data Structures"],
@@ -517,6 +522,46 @@ async def complete_booking(booking_id: str, request: Request):
     
     return {"ok": True, "booking": booking}
 
+# ==================== ADMIN BOOKING ENDPOINTS ====================
+
+@app.get("/admin/bookings")
+async def get_all_bookings_admin(request: Request):
+    """GET /tutors/admin/bookings - Admin views all booking requests across all tutors"""
+    payload = require_admin(request)
+    print(f"[tutors] GET /admin/bookings for admin={payload.get('sub')}")
+    
+    # Return all bookings sorted by creation date
+    all_bookings = list(BOOKINGS.values())
+    all_bookings.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
+    
+    # Add statistics
+    stats = {
+        "total": len(all_bookings),
+        "pending": len([b for b in all_bookings if b["status"] == "pending"]),
+        "confirmed": len([b for b in all_bookings if b["status"] == "confirmed"]),
+        "rejected": len([b for b in all_bookings if b["status"] == "rejected"]),
+        "cancelled": len([b for b in all_bookings if b["status"] == "cancelled"]),
+        "completed": len([b for b in all_bookings if b["status"] == "completed"]),
+    }
+    
+    return {
+        "ok": True,
+        "bookings": all_bookings,
+        "stats": stats,
+    }
+
+
+@app.get("/admin/bookings/{booking_id}")
+async def get_booking_detail_admin(booking_id: str, request: Request):
+    """GET /tutors/admin/bookings/{id} - Admin views specific booking details"""
+    payload = require_admin(request)
+    print(f"[tutors] GET /admin/bookings/{booking_id} for admin={payload.get('sub')}")
+    
+    booking = BOOKINGS.get(booking_id)
+    if not booking:
+        raise HTTPException(status_code=404, detail="booking not found")
+    
+    return {"ok": True, "booking": booking}
 
 if __name__ == "__main__":
     import uvicorn

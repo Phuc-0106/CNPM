@@ -270,7 +270,7 @@ async function fetchParticipants(sessionId, silent = false) {
         
         // Filter bookings for this session (both pending and confirmed)
         const sessionBookings = bookings.filter(b => 
-            b.sessionId === sessionId && (b.status === "confirmed" || b.status === "pending")
+            b.sessionId === sessionId && (b.status === "confirmed")
         );
 
         // Transform bookings to participants

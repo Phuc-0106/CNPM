@@ -208,6 +208,16 @@ async def bookings_proxy(path: str, request: Request):
     """Route /bookings/* to Tutors service"""
     return await proxy_request(TUTORS_UPSTREAM, f"bookings/{path}", request)
 
+@app.api_route("/admin/bookings", methods=["GET"])
+async def admin_bookings_root(request: Request):
+    """Route /admin/bookings to Tutors service"""
+    return await proxy_request(TUTORS_UPSTREAM, "admin/bookings", request)
+
+
+@app.api_route("/admin/bookings/{path:path}", methods=["GET"])
+async def admin_bookings_proxy(path: str, request: Request):
+    """Route /admin/bookings/* to Tutors service"""
+    return await proxy_request(TUTORS_UPSTREAM, f"admin/bookings/{path}", request)
 
 if __name__ == "__main__":
     import uvicorn
