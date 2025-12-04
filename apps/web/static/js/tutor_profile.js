@@ -49,18 +49,17 @@ const els = {
 
 let profileData = null;
 
+// Define a configurable default avatar URL (set window.DEFAULT_TUTOR_AVATAR_URL before loading this script)
+//const DEFAULT_TUTOR_AVATAR_URL = window.DEFAULT_TUTOR_AVATAR_URL || "/static/images/perfect_cell.jpg";
+
 function renderProfile(data) {
   console.log("Rendering profile:", data);
   const me = data?.tutor || {};
 
-  // Avatar
+  // Avatar: use the URL from Tutors service; if missing, keep current img unchanged
   if (me.avatarUrl) {
     if (els.profileAvatar) els.profileAvatar.src = me.avatarUrl;
     if (els.avatarPreview) els.avatarPreview.src = me.avatarUrl;
-  } else {
-    const defaultAvatar = "/static/images/perfect_cell.jpg";
-    if (els.profileAvatar) els.profileAvatar.src = defaultAvatar;
-    if (els.avatarPreview) els.avatarPreview.src = defaultAvatar;
   }
 
   // Basic info
@@ -68,22 +67,12 @@ function renderProfile(data) {
   if (els.profileEmail) els.profileEmail.textContent = me.email || "-";
   if (els.profileId) els.profileId.textContent = me.tutorId || me.id || "-";
   if (els.profileMajor) els.profileMajor.textContent = me.major || "-";
-
-  // Bio
   if (els.profileBio) els.profileBio.textContent = me.bio || "No bio yet.";
-  if (els.bioInput) {
-    els.bioInput.value = me.bio || "";
-    updateBioCount();
-  }
 
   // Teaching modes
   const modes = me.teachingModes || [];
-  if (els.previewInperson) {
-    els.previewInperson.style.display = modes.includes("in-person") ? "inline-block" : "none";
-  }
-  if (els.previewOnline) {
-    els.previewOnline.style.display = modes.includes("online") ? "inline-block" : "none";
-  }
+  els.previewInperson && (els.previewInperson.style.display = modes.includes("in-person") ? "inline-block" : "none");
+  els.previewOnline && (els.previewOnline.style.display = modes.includes("online") ? "inline-block" : "none");
 
   // Update mode buttons
   document.querySelectorAll(".mode-btn").forEach((btn) => {
@@ -326,10 +315,8 @@ async function clearAvatar() {
       method: "DELETE",
       credentials: "include",
     });
-    const defaultAvatar = "/static/images/perfect_cell.jpg";
-    if (els.profileAvatar) els.profileAvatar.src = defaultAvatar;
-    if (els.avatarPreview) els.avatarPreview.src = defaultAvatar;
-    if (els.avatarInput) els.avatarInput.value = "";
+    // Re-fetch profile to get server-stored avatarUrl (or None)
+    await fetchProfile();
   } catch (err) {
     console.error("Clear avatar error:", err);
   }

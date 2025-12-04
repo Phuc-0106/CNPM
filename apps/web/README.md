@@ -7,9 +7,14 @@ Plain HTML, CSS, and JavaScript served from `www` with shared assets in `static`
 - `www/login.html` — login form
 - `www/student.html` — student home (browse sessions, cart, messaging)
 - `www/profile.html` — student profile (bookings, progress, edit profile)
+- `wwww/tutor_profile.html` — tutor profile (informations, languages, bio, modes, skills, support courses)
+- `www/tutor_management_page.html` — Schedule & Request Sessions
+- `www/tutor_manage_session.html` — Detail Sessions
+- `www/admin.html` — Admin features
 - `static/css/main.css` — styles
 - `static/js` — page-specific scripts
 - `static/images` — shared images and logo
+
 
 ## Local preview
 ```bash

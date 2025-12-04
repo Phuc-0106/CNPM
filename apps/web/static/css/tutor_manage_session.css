@@ -82,10 +82,32 @@
     border: 1px solid #fde68a;
 }
 
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin: 0;
+    /* REMOVE overflow: hidden - allow body to scroll */
+}
+
+header.nav {
+    position: sticky; /* Change back to sticky for scrolling effect */
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+    background: rgba(12, 19, 39, 0.75);
+    border-bottom: 1px solid var(--border);
+}
+
 main {
     flex: 1;
     display: flex;
-    overflow: hidden;
+    overflow: visible; /* Allow overflow */
+    margin-top: 0; /* Remove fixed margin */
+    min-height: calc(100vh - 150px); /* Minimum height */
+    padding-bottom: 100px; /* Space for footer */
 }
 
 .session-list {
@@ -94,13 +116,16 @@ main {
     border-right: 1px solid #e2e8f0;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    max-height: calc(100vh - 70px); /* Limit height for internal scroll */
+    position: sticky; /* Make list sticky */
+    top: 70px; /* Below header */
 }
 
 .session-tabs {
     display: flex;
     border-bottom: 1px solid #e2e8f0;
     background: #f8fafc;
+    flex-shrink: 0; /* Don't shrink */
 }
 
 .session-tab {
@@ -146,7 +171,8 @@ main {
 
 .sessions-scroll {
     flex: 1;
-    overflow-y: auto;
+    overflow-y: auto; /* Enable scrolling for sessions list */
+    overflow-x: hidden;
     padding: 16px;
 }
 
@@ -252,9 +278,9 @@ main {
 .details-pane {
     flex: 1;
     background: #f8fafc;
-    overflow-y: auto;
     display: flex;
     flex-direction: column;
+    min-height: 100%; /* Allow natural height */
 }
 
 .session-header {
@@ -262,6 +288,7 @@ main {
     padding: 28px;
     border-bottom: 1px solid #e2e8f0;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    
 }
 
 .session-title-row {
@@ -358,6 +385,9 @@ main {
 .session-content {
     flex: 1;
     padding: 24px;
+    padding-bottom: 120px; /* Extra space for footer */
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .content-card {
@@ -594,6 +624,7 @@ main {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 14px;
+    margin-bottom: 60px; /* Add significant margin below action buttons */
 }
 
 .action-btn {
@@ -646,6 +677,12 @@ main {
     text-align: center;
     padding: 80px 20px;
     color: #64748b;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
 }
 
 .empty-icon {
@@ -747,39 +784,38 @@ main {
 }
 
 @media (max-width: 1024px) {
-    .session-list {
-        flex: 0 0 320px;
+    main {
+        flex-direction: column;
+        min-height: auto;
     }
 
-    .session-meta {
-        grid-template-columns: 1fr 1fr;
+    .session-list {
+        position: relative;
+        top: 0;
+        max-height: 400px;
+    }
+
+    .session-header {
+        position: relative;
+        top: 0;
     }
 }
 
 @media (max-width: 768px) {
     main {
         flex-direction: column;
+        padding-bottom: 120px;
     }
 
     .session-list {
         flex: 0 0 auto;
-        max-height: 40vh;
+        border-right: none;
+        border-bottom: 1px solid #e2e8f0;
+        position: relative;
+        max-height: 300px;
     }
 
-    .details-pane {
-        flex: 1;
-    }
-
-    .session-tabs {
-        overflow-x: auto;
-    }
-
-    .session-tab {
-        flex: 0 0 auto;
-        min-width: 80px;
-    }
-
-    .action-grid {
-        grid-template-columns: 1fr;
+    .session-header {
+        position: relative;
     }
 }

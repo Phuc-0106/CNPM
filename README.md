@@ -4,7 +4,7 @@ Static web (in `apps`), FastAPI microservices (in `services`), and simple infra 
 
 ## Structure
 - `apps/web/www`: static pages (student/profile/session) served by `http-server` in dev.
-- `services/*`: FastAPI services (`auth`, `students`, `sessions`, `users`, `messages`, `api-gateway`).
+- `services/*`: FastAPI services (`auth`, `students`, `sessions`, `users`, `messages`, `api-gateway`, `library`, `admin`, `tutors`).
 - `infra/`: environment helpers (e.g., `nginx.conf`, docker bits if added later).
 - `logs/`: service logs (ignored by git).
 
@@ -26,6 +26,8 @@ This starts:
 - users on :4015
 - sessions on :4016
 - messages on :4017
+- admin on:4019
+- tutors on: 4099
 
 Logs are written to `logs/*.log` (e.g., `tail -f logs/api-gateway.log`).
 

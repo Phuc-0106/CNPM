@@ -133,9 +133,7 @@ async def students_root(request: Request):
 async def students_proxy(path: str, request: Request):
     return await proxy_request(STUDENTS_UPSTREAM, path, request)
 
-@app.api_route("/register", methods=["POST"])
-async def students_register(request: Request):
-    return await proxy_request(STUDENTS_UPSTREAM, "register", request)
+
 
 @app.api_route("/sessions/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
 async def sessions_proxy(path: str, request: Request):
@@ -148,16 +146,6 @@ async def sessions_root(request: Request):
 @app.api_route("/messaging/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
 async def messaging_proxy(path: str, request: Request):
     return await proxy_request(MESSAGES_UPSTREAM, path, request)
-
-
-@app.api_route("/courses", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
-async def courses_root(request: Request):
-    return await proxy_request(STUDENTS_UPSTREAM, "courses", request)
-
-
-@app.api_route("/courses/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
-async def courses_proxy(path: str, request: Request):
-    return await proxy_request(STUDENTS_UPSTREAM, f"courses/{path}", request)
 
 
 @app.api_route("/messaging", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
@@ -208,6 +196,16 @@ async def bookings_proxy(path: str, request: Request):
     """Route /bookings/* to Tutors service"""
     return await proxy_request(TUTORS_UPSTREAM, f"bookings/{path}", request)
 
+@app.api_route("/admin/bookings", methods=["GET"])
+async def admin_bookings_root(request: Request):
+    """Route /admin/bookings to Tutors service"""
+    return await proxy_request(TUTORS_UPSTREAM, "admin/bookings", request)
+
+
+@app.api_route("/admin/bookings/{path:path}", methods=["GET"])
+async def admin_bookings_proxy(path: str, request: Request):
+    """Route /admin/bookings/* to Tutors service"""
+    return await proxy_request(TUTORS_UPSTREAM, f"admin/bookings/{path}", request)
 
 if __name__ == "__main__":
     import uvicorn

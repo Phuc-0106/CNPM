@@ -232,6 +232,7 @@ main {
     background: #f0fdf4;
 }
 
+/* All slots are green by default (both published and unpublished) */
 .slot {
     position: absolute;
     left: 4px;
@@ -254,6 +255,7 @@ main {
     z-index: 3;
 }
 
+/* Only booked slots have different color (blue) */
 .slot.booked {
     background: #3b82f6;
 }
@@ -262,6 +264,7 @@ main {
     background: #2563eb;
 }
 
+/* Exception slots are red */
 .slot.exception {
     background: #ef4444;
 }
@@ -269,6 +272,9 @@ main {
 .slot.exception:hover {
     background: #dc2626;
 }
+
+/* REMOVE the orange unpublished style - unpublished is now green with "Draft" label */
+/* .slot.unpublished { ... } - REMOVED */
 
 .slot .slot-time {
     font-weight: 600;
@@ -281,35 +287,26 @@ main {
     opacity: 0.9;
 }
 
-.slot {
-    background: #22c55e;
-    color: white;
-    border-radius: 4px;
-    padding: 4px 6px;
+.slot .slot-course {
+    font-weight: 600;
     font-size: 11px;
-    margin-bottom: 2px;
-    cursor: pointer;
-    transition: all 0.2s;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.slot:hover {
-    background: #16a34a;
-}
-
-.slot.booked {
-    background: #3b82f6;
-}
-
-.slot.booked:hover {
-    background: #2563eb;
-}
-
-.slot.exception {
-    background: #ef4444;
-}
-
-.slot.exception:hover {
-    background: #dc2626;
+/* Draft label for unpublished slots */
+.slot .slot-status {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-top: 4px;
+    padding: 2px 6px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    display: inline-block;
+    letter-spacing: 0.5px;
 }
 
 .slots-table-card {
@@ -698,4 +695,27 @@ td {
   100% {
     background: transparent;
   }
+}
+
+.required {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.form-hint {
+    display: block;
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 4px;
+}
+
+.form-group input:disabled,
+.form-group select:disabled {
+    background: #f1f5f9;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.form-group.disabled label {
+    color: #94a3b8;
 }

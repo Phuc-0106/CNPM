@@ -76,89 +76,7 @@ def format_phone(value: str) -> str:
         rest = rest[3:]
     return " ".join(chunks)
 
-def build_sessions() -> List[Dict[str, object]]:
-    tutors = [
-        "Nguyen Tuan Anh",
-        "Tran Hong Tai",
-        "Tran Tuan Anh",
-        "Tran Ngoc Bao Duy",
-        "Vo Thanh Hung",
-        "Tran Huy",
-        "Nguyen An Khuong",
-        "Nguyen Hua Phung",
-        "Le Thanh Sach",
-        "Tran Giang Son",
-        "Vuong Ba Thinh",
-        "Luong Minh Hien",
-        "Vu Van Tien",
-        "Le Binh Dang",
-        "Tran Nguyen Minh Duy",
-        "Nguyen Quang Duc",
-        "Mai Xuan Toan",
-        "Thi Khac Quan",
-        "Nguyen Quoc Minh",
-        "Duong Duc Tin",
-        "Nguyen Duc Dung",
-        "Le Hong Trang",
-    ]
 
-    subjects = [
-        ("CO1005", "Introduction to Computing"),
-        ("CO1023", "Digital Systems"),
-        ("CO1007", "Programming Fundamentals"),
-        ("CO2003", "Data Structures and Algorithms"),
-        ("CO2011", "Computer Architecture"),
-        ("CO2013", "Operating Systems"),
-        ("CO2017", "Advanced Programming"),
-        ("CO2001", "Computer Networks"),
-        ("CO3005", "Software Engineering"),
-        ("CO3001", "Probability and Statistics"),
-        ("CO3011", "Compiler Construction"),
-        ("CO3013", "Software Testing"),
-        ("CO3001A", "Web Programming"),
-        ("CO3041", "Computer Graphics"),
-        ("CO3047", "Computer Vision"),
-        ("CO3045", "Mobile Development"),
-        ("CO3033", "Information Security"),
-        ("CO3059", "Cryptography"),
-        ("CO3061", "Distributed Systems"),
-        ("CO3083", "Parallel Computing"),
-        ("CO3115", "Machine Learning"),
-        ("CO3089", "NLP"),
-    ]
-
-    days = ["MON", "TUE", "WED", "THU", "FRI", "SAT"]
-    slots = [("07:00", "09:00"), ("09:00", "11:00"), ("13:00", "15:00"), ("15:00", "17:00"), ("18:00", "20:00")]
-    modes = ["Online", "On campus"]
-
-    sessions: List[Dict[str, object]] = []
-    idx = 0
-    for subj_code, subj_title in subjects:
-        for day in days:
-            for start, end in slots:
-                if len(sessions) >= 90:
-                    return sessions
-                tutor = tutors[idx % len(tutors)]
-                mode = modes[(idx + len(day)) % 2]
-                rating = 4.0 + (idx % 10) * 0.1
-                sessions.append(
-                    {
-                        "id": f"sess-{idx+1}",
-                        "code": subj_code,
-                        "title": subj_title,
-                        "tutor": tutor,
-                        "mode": mode,
-                        "start": start,
-                        "end": end,
-                        "rating": round(rating, 1),
-                        "dayOfWeek": day,
-                    }
-                )
-                idx += 1
-    return sessions
-
-
-SESSIONS: List[Dict[str, object]] = build_sessions()
 
 
 def january_date(day: int, hour: int = 9) -> str:
@@ -189,28 +107,12 @@ STUDENTS: Dict[str, Dict[str, object]] = {
         },
         "preferences": ["Online", "On campus"],
         "history": {
-            "attendance": [
-                {
-                    "id": "att1",
-                    "date": iso(-7, 10),
-                    "courseCode": "CS202",
-                    "courseTitle": "Data Structures",
-                    "mode": "On campus",
-                },
-                {
-                    "id": "att2",
-                    "date": iso(-2, 15),
-                    "courseCode": "CS404",
-                    "courseTitle": "Operating Systems",
-                    "mode": "Online",
-                },
-            ],
             "bookings": [
                 {
                     "id": "bk1",
                     "date": now_iso(),
-                    "courseCode": "CS303",
-                    "courseTitle": "Algorithms",
+                    "courseCode": "CO2013",
+                    "courseTitle": "Operating Systems",
                     "mode": "On campus",
                 }
             ],
@@ -237,24 +139,7 @@ STUDENTS: Dict[str, Dict[str, object]] = {
                 "endDate": january_date(30, 16),
             },
         ],
-        "progress": [
-            {
-                "id": "p1",
-                "sessionId": "sess-1",
-                "code": "CS101",
-                "title": "Intro to Programming",
-                "startDate": january_date(12, 9),
-                "endDate": january_date(26, 11),
-            },
-            {
-                "id": "p2",
-                "sessionId": "sess-2",
-                "code": "CS202",
-                "title": "Data Structures",
-                "startDate": january_date(15, 14),
-                "endDate": january_date(30, 16),
-            },
-        ],
+        
         "stats": {"hoursStudied": 42.5, "sessionsAttended": 12},
         "announcements": [
             "Tutoring labs close early on Fridays (17:00).",
@@ -332,38 +217,12 @@ async def health():
 
 @app.get("/sessions/browse")
 async def browse_sessions(request: Request, payload=Depends(require_student)):
-    _ = payload
-    q = request.query_params
-    code = (q.get("code") or "").strip().upper()
-    from_hour = int(q.get("fromHour") or 0)
-    to_hour = int(q.get("toHour") or 24)
-    allow_online = (q.get("online") or "true").lower() != "false"
-    allow_oncampus = (q.get("onCampus") or "true").lower() != "false"
-    days_raw = (q.get("days") or "").split(",")
-    days = [d.strip().upper() for d in days_raw if d.strip()]
+   
 
-    filtered: List[Dict[str, object]] = []
-    for c in SESSIONS:
-        if code and code not in str(c["code"]).upper():
-            continue
-        start_h = int(str(c["start"]).split(":")[0])
-        end_h = int(str(c["end"]).split(":")[0])
-        if start_h < from_hour or end_h > to_hour:
-            continue
-        if c["mode"] == "Online" and not allow_online:
-            continue
-        if c["mode"] == "On campus" and not allow_oncampus:
-            continue
-        if days and c["dayOfWeek"] not in days:
-            continue
-        filtered.append(c)
-
-    return {"ok": True, "sessions": filtered}
+    return {"ok": True, "sessions": []}
 
 
-@app.get("/courses/browse")
-async def browse_courses(request: Request, payload=Depends(require_student)):
-    return await browse_sessions(request, payload)
+
 
 
 def sidebar_for(student_id: str) -> Dict[str, object]:
@@ -425,61 +284,8 @@ async def post_message(conv_id: str, request: Request, payload=Depends(require_s
     return {"message": msg}
 
 
-@app.post("/register")
-async def register_sessions(request: Request, payload=Depends(require_student)):
-    student_id = payload.get("sub")
-    data = ensure_student(student_id)
-    body = await request.json()
-    ids = body.get("sessionIds") or []
-    now = now_iso()
-    added = []
-    for sid in ids:
-        course = next((c for c in SESSIONS if c["id"] == sid), None)
-        if not course:
-            continue
-        already = any(bs.get("sessionId") == sid for bs in data.get("bookedSessions", []))
-        if already:
-            continue
-        start_hour = int(str(course["start"]).split(":")[0])
-        end_hour = int(str(course["end"]).split(":")[0])
-        entry = {
-            "id": f"reg-{sid}-{len(data.get('bookedSessions', []))}",
-            "sessionId": sid,
-            "code": course["code"],
-            "title": course["title"],
-            "addedAt": now_iso(),
-            "scheduledAt": january_date(10, start_hour),
-            "startDate": january_date(10, start_hour),
-            "endDate": january_date(25, end_hour),
-        }
-        data.setdefault("bookedSessions", []).append(entry)
-        data.setdefault("progress", []).append(
-            {
-                "id": entry["id"],
-                "sessionId": sid,
-                "code": course["code"],
-                "title": course["title"],
-                "startDate": entry["startDate"],
-                "endDate": entry["endDate"],
-            }
-        )
-        data.setdefault("history", {}).setdefault("bookings", []).append(
-            {
-                "id": entry["id"],
-                "date": now_iso(),
-                "courseCode": course["code"],
-                "courseTitle": course["title"],
-                "mode": course["mode"],
-                "status": "SCHEDULED",
-            }
-        )
-        added.append(entry)
-    return {"ok": True, "added": added}
 
-# alias to keep compatibility
-@app.post("/students/register")
-async def register_sessions_alias(request: Request, payload=Depends(require_student)):
-    return await register_sessions(request, payload)
+
 
 
 @app.get("/profile")
@@ -524,122 +330,6 @@ async def profile(payload=Depends(require_student)):
 async def profile_students(payload=Depends(require_student)):
     return await profile(payload)
 
-
-@app.get("/session/{session_id}")
-async def session_detail(session_id: str, payload=Depends(require_student)):
-    student_id = payload.get("sub")
-    data = ensure_student(student_id)
-    session = next((s for s in SESSIONS if s["id"] == session_id), None)
-    if not session:
-        raise HTTPException(status_code=404, detail="not found")
-    # attach status if booked
-    status = "AVAILABLE"
-    booking_info: Optional[Dict[str, object]] = None
-    for b in data.get("bookedSessions", []):
-        if b.get("sessionId") == session_id:
-            status = "SCHEDULED"
-            booking_info = b
-    if booking_info:
-        merged = {**session, **booking_info}
-        merged["originalCode"] = session.get("code")
-        merged["originalTitle"] = session.get("title")
-        merged["code"] = session.get("code")
-        merged["title"] = session.get("title")
-        return {"session": merged, "status": status}
-    return {"session": session, "status": status}
-
-
-@app.post("/session/{session_id}/cancel")
-async def cancel_session(session_id: str, request: Request, payload=Depends(require_student)):
-    student_id = payload.get("sub")
-    data = ensure_student(student_id)
-    reason = (await request.json()).get("reason", "")
-    for b in data.get("bookedSessions", []):
-        if b.get("sessionId") == session_id:
-            b["status"] = "CANCELLED"
-            b["cancelReason"] = reason
-    return {"ok": True}
-
-
-@app.post("/session/{session_id}/reschedule")
-async def reschedule_session(session_id: str, request: Request, payload=Depends(require_student)):
-    student_id = payload.get("sub")
-    data = ensure_student(student_id)
-    body = await request.json()
-    reason = body.get("reason", "")
-    notes = body.get("notes", "")
-    new_session_id = body.get("newSessionId")
-    booking = next((b for b in data.get("bookedSessions", []) if b.get("sessionId") == session_id), None)
-    if not booking:
-        raise HTTPException(status_code=404, detail="booking not found")
-
-    booking["rescheduleReason"] = reason
-    booking["rescheduleNotes"] = notes
-
-    if new_session_id:
-        new_session = next((s for s in SESSIONS if s["id"] == new_session_id), None)
-        if not new_session:
-            raise HTTPException(status_code=404, detail="new session not found")
-        start_hour = int(str(new_session["start"]).split(":")[0])
-        end_hour = int(str(new_session["end"]).split(":")[0])
-        booking["sessionId"] = new_session["id"]
-        booking["code"] = new_session["code"]
-        booking["title"] = new_session["title"]
-        booking["scheduledAt"] = january_date(18, start_hour)
-        booking["startDate"] = booking["scheduledAt"]
-        booking["endDate"] = january_date(33, end_hour)
-        booking["mode"] = new_session.get("mode")
-        booking["tutor"] = new_session.get("tutor")
-        booking["status"] = "RESCHEDULED"
-        # keep progress in sync with the new session choice
-        progress_entries = data.setdefault("progress", [])
-        found_progress = False
-        for p in progress_entries:
-            if p.get("sessionId") == session_id:
-                p["sessionId"] = new_session["id"]
-                p["code"] = new_session["code"]
-                p["title"] = new_session["title"]
-                p["startDate"] = booking["startDate"]
-                p["endDate"] = booking["endDate"]
-                p["percent"] = p.get("percent", 20)
-                found_progress = True
-        if not found_progress:
-            progress_entries.append(
-                {
-                    "id": f"prog-{booking.get('id', new_session['id'])}",
-                    "sessionId": new_session["id"],
-                    "code": new_session["code"],
-                    "title": new_session["title"],
-                    "startDate": booking["startDate"],
-                    "endDate": booking["endDate"],
-                    "percent": 20,
-                }
-            )
-        # update booking history entry if one exists
-        history_bookings = data.setdefault("history", {}).setdefault("bookings", [])
-        updated_hist = False
-        for h in history_bookings:
-            if h.get("id") == booking.get("id"):
-                h["courseCode"] = new_session["code"]
-                h["courseTitle"] = new_session["title"]
-                h["mode"] = new_session.get("mode", h.get("mode"))
-                h["date"] = booking["scheduledAt"]
-                h["status"] = "RESCHEDULED"
-                updated_hist = True
-        if not updated_hist:
-            history_bookings.append(
-                {
-                    "id": booking.get("id", f"bk-{new_session['id']}"),
-                    "date": booking["scheduledAt"],
-                    "courseCode": new_session["code"],
-                    "courseTitle": new_session["title"],
-                    "mode": new_session.get("mode", "Online"),
-                    "status": "RESCHEDULED",
-                }
-            )
-    else:
-        booking["status"] = "RESCHEDULED"
-    return {"ok": True, "booking": booking}
 
 
 @app.get("/users/student/profile")
